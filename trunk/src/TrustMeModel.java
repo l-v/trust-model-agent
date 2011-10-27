@@ -1,4 +1,4 @@
-package TrustMe;
+
 
 import uchicago.src.sim.engine.SimInit;
 import uchicago.src.sim.engine.SimpleModel;
@@ -14,6 +14,20 @@ public class TrustMeModel extends SimpleModel {
 	
 	private double p1ManagementOfOwnMoney = 0.5;
 	private double p1CookingAbilities = 0.4;
+	
+	
+	/***
+	 *  sinalpha parameters
+	 */
+	double delta = 0.5;
+	double alpha0 = 3.0*Math.PI/2.0;
+	double alpha1 = 5.0*Math.PI/2.0;
+	
+	double omega = Math.PI/12.0; // time/steps to reach maximum trust level
+	double lambdaPos = 1.0; // weight of positive attributes
+	double lambdaNeg = -1.5; // weight of negative attributes
+	
+	
 	
 	public void setP1ManagementOfOwnMoney(double p1ManagementOfOwnMoney) {
 		this.p1ManagementOfOwnMoney = p1ManagementOfOwnMoney;
@@ -31,6 +45,8 @@ public class TrustMeModel extends SimpleModel {
 		return p1CookingAbilities;
 	}
 
+	
+	
 	public void setup() {
 		super.setup();
 		
@@ -54,8 +70,33 @@ public class TrustMeModel extends SimpleModel {
 	   // int size = agentList.size();
 	}
 	
+	
+	public void sinalpha() {
+		// trust = delta * sin(alpha) + d
+		// alpha = alpha0 + lambda*omega
+		
+		double lambda = 0.0;
+		int numAgents = agentList.size();
+		
+		for (int i=0; i!=numAgents; i++) {
+			TrustMeAgent agent = (TrustMeAgent) agentList.get(i);
+			
+			// no idea if the formula works like this yet, just making it up =P
+			lambda = lambdaPos*agent.getPosTraits() + lambdaNeg*agent.getNegTraits();
+		}
+		
+		
+		double alpha = alpha0 + lambda*omega;
+		double trust = delta * Math.sin(alpha) + delta;
+		
+		// missing: apply trust values to agents
+	}
+	
+	
 	public static void main(String[] args) {
 		SimInit init = new SimInit();
 		init.loadModel(new TrustMeModel(), null, false);
 	}
+	
+	
 }
