@@ -31,6 +31,11 @@ public class TrustMeAgent implements Drawable {
 	Map<Integer, Double> agentTrust;
 	
 	
+	// overall trust based on the default values
+	double overallTrust = 0.0;
+	double alpha = -1;
+	
+	
 
 	public TrustMeAgent(Object2DTorus space, int who){
 		this.who = who;
