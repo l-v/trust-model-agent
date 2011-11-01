@@ -1,6 +1,7 @@
-
+package TrustMe;
 
 import java.awt.Color;
+import java.util.HashMap;
 
 import uchicago.src.sim.engine.SimInit;
 import uchicago.src.sim.engine.SimpleModel;
@@ -15,36 +16,21 @@ public class TrustMeModel extends SimpleModel {
 	private int numAgents = 50;
 
 	
+	public HashMap<Integer, Integer> agentsPaired = new HashMap<Integer, Integer>();
+	
+	
 	/***
 	 * Default values desirable agent attributes (for testing?)
 	 */
 	private double p1ManagementOfOwnMoney = 0.5;
 	private double p1CookingAbilities = 0.4;
 	
-	private double neat = 0.5;
-	private double outgoing = 0.5;
-	private double nice = 0.5;
-	private double active = 0.5;
-	private double responsible = 0.5;
+	
 	// anything missing?
 	
 	
-	/***
-	 *  sinalpha parameters
-	 */
-	final double delta = 0.5;
-	final double alpha0 = 3.0*Math.PI/2.0;
-	final double alpha1 = 5.0*Math.PI/2.0;
-	
-	double omega = Math.PI/12.0; // time/steps to reach maximum trust level
-	double lambdaPos = 1.0; // weight of positive attributes
-	double lambdaNeg = -1.5; // weight of negative attributes
-	
-	
-	
 
-
-
+	
 	
 	
 	public void setP1ManagementOfOwnMoney(double p1ManagementOfOwnMoney) {
@@ -80,7 +66,7 @@ public class TrustMeModel extends SimpleModel {
 
 	    
 	    // add agents with random values
-	    for (int i=0; i!=numAgents; i++) {
+	    for (int i = 0; i != numAgents; i++) {
 	    	
 			int x = getNextIntFromTo(0, spaceSize -1);
 			int y = getNextIntFromTo(0, spaceSize - 1);
@@ -102,61 +88,27 @@ public class TrustMeModel extends SimpleModel {
 	    
 	    Object2DDisplay display = new Object2DDisplay(space);
 	    dsurf.addDisplayable(display,"Buttons Space");
-	    dsurf.display();
-	    
-	    
+	    dsurf.display();	    
 	}
 
 	public void step() {
-	   // int size = agentList.size();
-		
-		
 		// calculate trust for all agents
 		int numAgents = agentList.size();
-		for (int i=0; i!=numAgents; i++) {
+		for (int i = 0; i != numAgents; i++) {
 			
 			TrustMeAgent agent = (TrustMeAgent) agentList.get(i);
-			agent.overallTrust = sinalpha(agent);
 			
+			//complexidade n^2
+			for(int j = i+1; j != numAgents; j++) {
+				//agent.overallTrust = sinalpha(agent);
+			}
+						
 			// TODO: erase prints of stuff for testing
 			if (agent.overallTrust<1.0 && i==0)
-			System.out.println(agent.overallTrust);
+				System.out.println(agent.overallTrust);
 		}
 		
 	}
-	
-	
-	public double sinalpha(TrustMeAgent agent) {
-		// trust = delta * sin(alpha) + d
-		// alpha = alpha0 + lambda*omega
-		
-		double lambda = 0.0;
-		
-		// takes into account positive and negative traits
-		lambda = lambdaPos*agent.getPosTraits() + lambdaNeg*agent.getNegTraits();
-
-
-		// if alpha wasn't initialized yet
-		if (agent.alpha == -1) {
-			agent.alpha = alpha0 + lambda*omega;
-		}
-		
-		// Calculates alpha 
-		// and verifies that alpha is between the limits [alpha0; alpha1]
-		else if (agent.alpha <= alpha1) {
-			
-			double newAlpha = agent.alpha + lambda*omega;
-
-			if (newAlpha > alpha1)
-				agent.alpha = alpha1;
-			else
-				agent.alpha = newAlpha;
-		}
-		
-		double trust = delta * Math.sin(agent.alpha) + delta;
-		return trust;
-	}
-	
 	
 	public static void main(String[] args) {
 		SimInit init = new SimInit();
