@@ -1,6 +1,7 @@
-package TrustMe;
+package trustMe;
 
 import java.awt.Color;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 
 import uchicago.src.sim.engine.SimInit;
@@ -25,14 +26,7 @@ public class TrustMeModel extends SimpleModel {
 	private double p1ManagementOfOwnMoney = 0.5;
 	private double p1CookingAbilities = 0.4;
 	
-	
-	// anything missing?
-	
-	
 
-	
-	
-	
 	public void setP1ManagementOfOwnMoney(double p1ManagementOfOwnMoney) {
 		this.p1ManagementOfOwnMoney = p1ManagementOfOwnMoney;
 	}
@@ -96,17 +90,43 @@ public class TrustMeModel extends SimpleModel {
 		int numAgents = agentList.size();
 		for (int i = 0; i != numAgents; i++) {
 			
+			if (i!=0)
+				continue;
+			
 			TrustMeAgent agent = (TrustMeAgent) agentList.get(i);
 			
 			//complexidade n^2
-			for(int j = i+1; j != numAgents; j++) {
+			for(int j = 0; j != numAgents; j++) {
 				//agent.overallTrust = sinalpha(agent);
+				
+
+				if (j!=0 && j!=1)
+					continue;
+				
+				if (j!=i) {
+					double trust = agent.getTrust((TrustMeAgent) agentList.get(j), j);
+					agent.setAgentTrust(j, trust);
+					/*if (trust < 1 &&  i==0 && j==1)
+						System.out.println(trust);*/
+					
+				}
 			}
-						
 			// TODO: erase prints of stuff for testing
-			if (agent.overallTrust<1.0 && i==0)
-				System.out.println(agent.overallTrust);
+			/*if (agent.overallTrust<1.0 && i==0)
+				System.out.println(agent.overallTrust);*/
 		}
+		
+		DecimalFormat myFormatter = new DecimalFormat("###.##");
+		System.out.println("\nTraits 0: " + ((TrustMeAgent) agentList.get(0)).printTraits());
+		//String output = myFormatter.format(((TrustMeAgent) agentList.get(0)).getTrustIn(1));
+		//System.out.println("Trust 0 in 1: " + output);
+		
+		System.out.println("Trust 0 in 1: " + ((TrustMeAgent) agentList.get(0)).getTrustIn(1));
+	//	System.out.println("\nTraits 1: " + ((TrustMeAgent) agentList.get(1)).printTraits());
+		
+	//	String output2 = myFormatter.format(((TrustMeAgent) agentList.get(1)).getTrustIn(0));
+	//	System.out.println("Trust 1 in 0: " +  output2 + "\n------------");
+		//System.out.println("Trust 1 in 0: " + ((TrustMeAgent) agentList.get(1)).getTrustIn(0) + "\n------------");
 		
 	}
 	
