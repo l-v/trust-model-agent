@@ -1,4 +1,4 @@
-package TrustMe;
+package trustMe;
 
 import uchicago.src.sim.space.Object2DTorus;
 import uchicago.src.sim.gui.Drawable;
@@ -54,10 +54,12 @@ public class TrustMeAgent implements Drawable {
 	// Map<agentID (on model), trustPlaced>
 	Map<Integer, Double> agentTrust;
 	
+	Map<Integer, Double> agentAlpha; // Map<agentIndex, agentAlpha>
+	
 	
 	// overall trust based on the default values
 	double overallTrust = 0.0;
-	double alpha = -1;
+	//double alpha = -1;
 	
 	public void addListAttribute(String a) {
 		if(!keyAttributes.contains(a))
@@ -70,12 +72,13 @@ public class TrustMeAgent implements Drawable {
 		this.space = space;
 		
 		agentTrust = new HashMap<Integer, Double>();
+		agentAlpha = new HashMap<Integer, Double>();
 		
-		traits.put("neat", 0.5);
-		traits.put("outgoing", 0.5);
-		traits.put("nice", 0.5);
-		traits.put("active", 0.5);
-		traits.put("responsible", 0.5);
+		traits.put("neat",randVal());
+		traits.put("outgoing", randVal());
+		traits.put("nice", randVal());
+		traits.put("active", randVal());
+		traits.put("responsible", randVal());
 		
 		//number of attributes that the linked list will have
 		Random rand = new Random();
@@ -138,6 +141,31 @@ public class TrustMeAgent implements Drawable {
 	public void setColor(Color color) { this.color = color; }
 	public Color getColor(){ return color; }
 	
+	public void setAgentTrust(int index, double trust) {
+		agentTrust.put(index, trust);
+	}
+	
+	public double randVal() {
+		Random rand = new Random();
+		return rand.nextInt(11)/10.0;
+	}
+	
+	public String printTraits() {
+		String agent = "";
+		
+		agent += "\n neat: " + Double.toString(traits.get("neat"));
+		agent += "\n outgoing: " + Double.toString(traits.get("outgoing"));
+		agent += "\n nice: " + Double.toString(traits.get("nice"));
+		agent += "\n active: " + Double.toString(traits.get("active"));
+		agent += "\n responsible: " + Double.toString(traits.get("responsible"));
+		
+		return agent;
+	}
+	
+	public Double getTrustIn(int index) {
+		return agentTrust.get(index);
+	}
+	
 	
 	//TODO -> not sure if this works or makes any sense...
 	// the number of desirable traits with value of 0.6 or more
@@ -164,15 +192,15 @@ public class TrustMeAgent implements Drawable {
 	}
 	
 	
-	public double getTrust(TrustMeAgent agent) {
+	public double getTrust(TrustMeAgent agent, int index) {
 		
-		// trust = delta * sin(alpha) + d
+		// trust = delta * sin(alpha) + delta
 		// alpha = alpha0 + lambda*omega
 				
 		double lambda = 0.0;
 		
-		int posTraits = 0;
-		int negTraits = 0;
+		double posTraits = 0;
+		double negTraits = 0;
 		
 		//checks list elements
 		int numAttr = keyAttributes.size();
@@ -187,26 +215,35 @@ public class TrustMeAgent implements Drawable {
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
-
+		System.out.println("lambda: " + lambda);
 
 		// if alpha wasn't initialized yet
-		if (agent.alpha == -1) {
-			agent.alpha = alpha0 + lambda*omega;
+		if(!agentAlpha.containsKey(index)) {
+			double alpha = alpha0 + lambda*omega;
+			agentAlpha.put(index, alpha);
 		}
 				
 		// Calculates alpha 
 		// and verifies that alpha is between the limits [alpha0; alpha1]
-		else if (agent.alpha <= alpha1) {
-					
-			double newAlpha = agent.alpha + lambda*omega;
-
+		else if (agentAlpha.get(index) <= alpha1) {
+			
+			double oldAlpha = agentAlpha.get(index);
+			
+			double newAlpha = oldAlpha + lambda*omega;
+			System.out.println("new alpha: " + newAlpha);
 			if (newAlpha > alpha1)
-				agent.alpha = alpha1;
+				agentAlpha.put(index, alpha1);
+			else if (newAlpha < alpha0)
+				agentAlpha.put(index, alpha0);
 			else
-				agent.alpha = newAlpha;
+				agentAlpha.put(index, newAlpha);
 		}
+		
+		System.out.println("alpha0: " + alpha0);
+		System.out.println("alpha: " + agentAlpha.get(index));
+		System.out.println("alpha1: " + alpha1);
 				
-		double trust = delta * Math.sin(agent.alpha) + delta;
+		double trust = delta * Math.sin(agentAlpha.get(index)) + delta;
 		return trust;
 	}
 }
