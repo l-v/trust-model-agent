@@ -1,4 +1,3 @@
-package trustMe;
 
 import java.awt.Color;
 import java.text.DecimalFormat;
@@ -105,7 +104,10 @@ public class TrustMeModel extends SimpleModel {
 				
 				if (j!=i) {
 					double trust = agent.getTrust((TrustMeAgent) agentList.get(j), j);
-					agent.setAgentTrust(j, trust);
+					
+					// if agent is not too different, consider him an option
+					if (trust != -1)
+						agent.setAgentTrust(j, trust);
 					/*if (trust < 1 &&  i==0 && j==1)
 						System.out.println(trust);*/
 					

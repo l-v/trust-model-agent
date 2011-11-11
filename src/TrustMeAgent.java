@@ -1,4 +1,4 @@
-package trustMe;
+
 
 import uchicago.src.sim.space.Object2DTorus;
 import uchicago.src.sim.gui.Drawable;
@@ -41,10 +41,12 @@ public class TrustMeAgent implements Drawable {
 		private double responsible = 0.5;
 	 */
 	
-	//private enum keyAttributesIndex { NEAT, OUTGOING, NICE, ACTIVE, RESPONSIBLE }
+	//private enum attributesIndex { NEAT, OUTGOING, NICE, ACTIVE, RESPONSIBLE }
+	private LinkedList<String> allAttributes;
 	private LinkedList<String> keyAttributes; //NEAT, OUTGOING, NICE, ACTIVE, RESPONSIBLE 
 	
-	private double picky = 0.2; //intervalo de avaliação de agentes [-picky, picky]
+	private double diffQuotient = 0.5; // diferenÃ§a mÃ¡xima aceite
+	private double picky = 0.2; //intervalo de avaliaï¿½ï¿½o de agentes [-picky, picky]
 	//neat_agente1 = 0.5 & neat_agente2 = 0.4
 	//0.5 - 0.4 = 0.1 <-- picky as 0.2 accepts!
 	
@@ -84,6 +86,15 @@ public class TrustMeAgent implements Drawable {
 		Random rand = new Random();
 		int rn_attributes = rand.nextInt(5); // de 0 a 4 <-- 5 atributos
 		
+		allAttributes = new LinkedList<String>();
+		allAttributes.add("neat");
+		allAttributes.add("outgoing");
+		allAttributes.add("nice");
+		allAttributes.add("active");
+		allAttributes.add("responsible");
+		
+		
+		
 		keyAttributes = new LinkedList<String>();
 		
 		//attribute rn_attributes to tha list
@@ -91,6 +102,8 @@ public class TrustMeAgent implements Drawable {
 			
 			int attribute = rand.nextInt(5);
 			
+			addListAttribute(allAttributes.get(attribute));
+			/*
 			switch(attribute) {
 			case 0:
 				addListAttribute("neat");
@@ -107,7 +120,7 @@ public class TrustMeAgent implements Drawable {
 			case 4:
 				addListAttribute("responsible");
 				break;
-			}
+			}*/
 		}
 		
 		
@@ -167,16 +180,6 @@ public class TrustMeAgent implements Drawable {
 	}
 	
 	
-	//TODO -> not sure if this works or makes any sense...
-	// the number of desirable traits with value of 0.6 or more
-	public int getPosTraits() {
-		return 2;
-	}
-	// TODO
-	// the number of traits with value of 0.4 or less
-	public int getNegTraits() {
-		return 1;
-	}
 	
 	//check if number of attributes chosen to evaluate are within the chosen picky range
 	public boolean pickyRange(TrustMeAgent agent, String attribute) {
@@ -203,7 +206,26 @@ public class TrustMeAgent implements Drawable {
 		double negTraits = 0;
 		
 		//checks list elements
-		int numAttr = keyAttributes.size();
+		int numAttr = traits.size();
+		for (int i=0; i!=numAttr; i++) {
+			
+			String trait = allAttributes.get(i);
+			
+			// checks if agents are too different
+			if (Math.abs(traits.get(trait) - agent.traits.get(trait)) > diffQuotient)
+				return -1;
+			
+			// checks if it fulfills key attributes
+			else if (keyAttributes.contains(trait)) {
+				
+				if (pickyRange(agent, trait)) 
+					posTraits++;
+				else
+					negTraits++;
+			}
+			
+		}
+		/*int numAttr = keyAttributes.size();
 		for (int i=0; i!=numAttr; i++) {
 			
 			String traitWanted = keyAttributes.get(i);
@@ -211,7 +233,7 @@ public class TrustMeAgent implements Drawable {
 				posTraits++;
 			else
 				negTraits++;
-		}
+		}*/
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
