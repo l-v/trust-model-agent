@@ -1,18 +1,23 @@
 
 
+import uchicago.src.sim.network.DefaultDrawableNode;
 import uchicago.src.sim.space.Object2DTorus;
-import uchicago.src.sim.gui.Drawable;
+//import uchicago.src.sim.gui.Drawable;
+import uchicago.src.sim.gui.NetworkDrawable;
 import uchicago.src.sim.gui.SimGraphics;
 import java.awt.*;
 import java.util.*;
 
-public class TrustMeAgent implements Drawable {
+public class TrustMeAgent extends DefaultDrawableNode /*implements Drawable*/ {
 	private int who;
 	private int group;
 	private int x, y;
 	private Color color;
 	private Object2DTorus space;
 	
+	//////Node stuff
+	private int xSize, ySize;
+	////
 	
 	/***
 	 *  sinalpha parameters
@@ -63,15 +68,14 @@ public class TrustMeAgent implements Drawable {
 	double overallTrust = 0.0;
 	//double alpha = -1;
 	
-	public void addListAttribute(String a) {
-		if(!keyAttributes.contains(a))
-			keyAttributes.add(a);
-	}
-
-	public TrustMeAgent(Object2DTorus space, int who){
-		this.who = who;
+	///////////////////////NODE
+	public TrustMeAgent(int xSize, int ySize, NetworkDrawable drawable, int who) {
+	    super(drawable);
+	    this.xSize = xSize;
+	    this.ySize = ySize;
+	    
+	    this.who = who;
 		this.group = who;
-		this.space = space;
 		
 		agentTrust = new HashMap<Integer, Double>();
 		agentAlpha = new HashMap<Integer, Double>();
@@ -102,7 +106,7 @@ public class TrustMeAgent implements Drawable {
 			
 			int attribute = rand.nextInt(5);
 			
-			addListAttribute(allAttributes.get(attribute));
+			addListAttribute(allAttributes.get(attribute), keyAttributes);
 			/*
 			switch(attribute) {
 			case 0:
@@ -130,7 +134,15 @@ public class TrustMeAgent implements Drawable {
             m.put(a, (freq == null) ? 1 : freq + 1);
         }*/
 	}
-
+	
+	
+	///////////////////////////////////////////
+	
+	public void addListAttribute(String a, LinkedList<String> list) {
+		if(!list.contains(a))
+			list.add(a);
+	}
+		
 	public void draw(SimGraphics g) {
 		g.drawFastCircle(color);
 	}
@@ -144,8 +156,8 @@ public class TrustMeAgent implements Drawable {
 	}
 
 	//Getter/Setters
-	public int getX() { return x; }
-	public int getY() { return y; }
+	/*public double getX() { return x; }
+	public double getY() { return y; }*/
 	public int getWho(){ return who; }
 
 	public void setGroup(int group) { this.group = group; }
@@ -188,12 +200,32 @@ public class TrustMeAgent implements Drawable {
 
 		double comp = attrValue1 - attrValue2;
 
-		if (Math.abs(comp) <= picky)
+		// aceite se attrb do agente 2 foi maior que o de 1, 
+		//ou se diferença não for maior que picky
+		if (Math.abs(comp) <= picky || attrValue1 < attrValue2)
 			return true;
 		
 		return false;
 	}
 	
+	public void mutate() {
+		
+		Random rand = new Random();
+		int rn_attributes = rand.nextInt(5);
+		
+		LinkedList<String> mutateAttr = new LinkedList<String>(); 
+		
+		while (mutateAttr.size() != rn_attributes) {
+
+			int attribute = rand.nextInt(5);
+			addListAttribute(allAttributes.get(attribute), mutateAttr);
+		}
+
+		for (int i=0; i!=rn_attributes; i++) {
+
+			traits.put(mutateAttr.get(i),randVal());
+		}
+	}
 	
 	public double getTrust(TrustMeAgent agent, int index) {
 		
