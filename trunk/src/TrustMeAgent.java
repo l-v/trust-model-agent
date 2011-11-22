@@ -1,22 +1,20 @@
-
+package TrustMe;
 
 import uchicago.src.sim.network.DefaultDrawableNode;
-import uchicago.src.sim.space.Object2DTorus;
 //import uchicago.src.sim.gui.Drawable;
 import uchicago.src.sim.gui.NetworkDrawable;
+import uchicago.src.sim.gui.OvalNetworkItem;
 import uchicago.src.sim.gui.SimGraphics;
 import java.awt.*;
 import java.util.*;
 
-public class TrustMeAgent extends DefaultDrawableNode /*implements Drawable*/ {
+public class TrustMeAgent extends DefaultDrawableNode {
 	private int who;
 	private int group;
-	private int x, y;
 	private Color color;
-	private Object2DTorus space;
 	
 	//////Node stuff
-	private int xSize, ySize;
+	private double xPos, yPos;
 	////
 	
 	/***
@@ -69,10 +67,13 @@ public class TrustMeAgent extends DefaultDrawableNode /*implements Drawable*/ {
 	//double alpha = -1;
 	
 	///////////////////////NODE
-	public TrustMeAgent(int xSize, int ySize, NetworkDrawable drawable, int who) {
-	    super(drawable);
-	    this.xSize = xSize;
-	    this.ySize = ySize;
+	public TrustMeAgent(double xpos, double ypos/*, NetworkDrawable drawable*/, int who) {
+	    //super(drawable);
+	    this.xPos = xpos;
+	    this.yPos = ypos;
+	    
+	    OvalNetworkItem drawable = new OvalNetworkItem (xPos, yPos);
+    	setDrawable(drawable);
 	    
 	    this.who = who;
 		this.group = who;
@@ -96,8 +97,6 @@ public class TrustMeAgent extends DefaultDrawableNode /*implements Drawable*/ {
 		allAttributes.add("nice");
 		allAttributes.add("active");
 		allAttributes.add("responsible");
-		
-		
 		
 		keyAttributes = new LinkedList<String>();
 		
@@ -126,15 +125,7 @@ public class TrustMeAgent extends DefaultDrawableNode /*implements Drawable*/ {
 				break;
 			}*/
 		}
-		
-		
-		// Initialize frequency table from command line
-		/*for (String a : args) {
-            Integer freq = m.get(a);
-            m.put(a, (freq == null) ? 1 : freq + 1);
-        }*/
 	}
-	
 	
 	///////////////////////////////////////////
 	
@@ -142,22 +133,8 @@ public class TrustMeAgent extends DefaultDrawableNode /*implements Drawable*/ {
 		if(!list.contains(a))
 			list.add(a);
 	}
-		
-	public void draw(SimGraphics g) {
-		g.drawFastCircle(color);
-	}
-
-	public void setXY(int x, int y) {
-		if (space.getObjectAt(this.x, this.y)==this)
-			space.putObjectAt(this.x, this.y,null);
-		this.x = x;
-		this.y = y;
-		space.putObjectAt(x,y,this);
-	}
 
 	//Getter/Setters
-	/*public double getX() { return x; }
-	public double getY() { return y; }*/
 	public int getWho(){ return who; }
 
 	public void setGroup(int group) { this.group = group; }
@@ -190,8 +167,6 @@ public class TrustMeAgent extends DefaultDrawableNode /*implements Drawable*/ {
 	public Double getTrustIn(int index) {
 		return agentTrust.get(index);
 	}
-	
-	
 	
 	//check if number of attributes chosen to evaluate are within the chosen picky range
 	public boolean pickyRange(TrustMeAgent agent, String attribute) {
