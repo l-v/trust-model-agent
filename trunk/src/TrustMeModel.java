@@ -1,12 +1,14 @@
-package TrustMe;
+
 
 import java.awt.Color;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Vector;
 
 import uchicago.src.reflector.ListPropertyDescriptor;
+import uchicago.src.repastdemos.jiggle.JiggleEdge;
 import uchicago.src.sim.analysis.NetSequenceGraph;
 import uchicago.src.sim.engine.BasicAction;
 import uchicago.src.sim.engine.Controller;
@@ -24,6 +26,7 @@ import uchicago.src.sim.gui.Network2DDisplay;
 import uchicago.src.sim.gui.OvalNetworkItem;
 import uchicago.src.sim.gui.RectNetworkItem;
 import uchicago.src.sim.network.DefaultDrawableNode;
+import uchicago.src.sim.network.Node;
 import uchicago.src.sim.util.Random;
 
 public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
@@ -209,39 +212,41 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		// calculate trust for all agents
 		int numAgents = agentList.size();
 		for (int i = 0; i != numAgents; i++) {
-	
+			/*
 			if (i!=0)
 				continue;
-
+*/
 			TrustMeAgent agent = (TrustMeAgent) agentList.get(i);
 
 			//complexidade n^2
 			for(int j = 0; j != numAgents; j++) {
 				//agent.overallTrust = sinalpha(agent);
-
+/*
 				if (j!=0 && j!=1)
 					continue;
-
+*/
 				if (j!=i) {
-					double trust = agent.getTrust((TrustMeAgent) agentList.get(j), j);
+					double trust = agent.getTrust((TrustMeAgent) agentList.get(j));
 
 					// if agent is not too different, consider him an option
-					if (trust != -1)
+					if (trust != -1) {
 						agent.setAgentTrust(j, trust);
+						
+						
+						// if this agent is a good choice, try to add it to the best options of the first
+						agent.evaluateOption(j);	
+					}
 					/*if (trust < 1 &&  i==0 && j==1)
 					System.out.println(trust);*/
 				}
 			}
-			// TODO: erase prints of stuff for testing
-			/*if (agent.overallTrust<1.0 && i==0)
-			System.out.println(agent.overallTrust);*/
-
+			
 			// probability of mutation
 			double probMutate = agent.randVal();
 			if (probMutate <= 0.25)
 				agent.mutate();
 		}
-
+		
 		DecimalFormat myFormatter = new DecimalFormat("###.##");
 		System.out.println("\nTraits 0: " + ((TrustMeAgent) agentList.get(0)).printTraits());
 		//String output = myFormatter.format(((TrustMeAgent) agentList.get(0)).getTrustIn(1));
@@ -265,34 +270,83 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		int numAgents = agentList.size();
 		for (int i = 0; i != numAgents; i++) {
 
-			if (i!=0)
+			/*if (i!=0)
 				continue;
-
+*/
 			TrustMeAgent agent = (TrustMeAgent) agentList.get(i);
-
+		
+			// cleans bestOptions list
+			agent.purgeBestOptions();
+			
+			if (agent.connected) {
+				
+				//check if connection must be broken
+				
+				
+				
+				// probability of mutation
+				double probMutate = agent.randVal();
+				if (probMutate <= 0.25)
+					agent.mutate();
+				
+				continue;
+			}
+			
 			//complexidade n^2
 			for(int j = 0; j != numAgents; j++) {
 				//agent.overallTrust = sinalpha(agent);
 
-
-				if (j!=0 && j!=1)
+				System.out.println("i:j  " + i+":"+j);
+				if (((TrustMeAgent)agentList.get(j)).connected)
 					continue;
-
+				
+				/*if (j!=0 && j!=1)
+					continue;
+				*/
 				if (j!=i) {
-					double trust = agent.getTrust((TrustMeAgent) agentList.get(j), j);
-
+					double trust = agent.getTrust((TrustMeAgent) agentList.get(j));
+					System.out.println("i:j -> " + i+":"+j);
+					// TODO: functionality disabled
 					// if agent is not too different, consider him an option
-					if (trust != -1)
+					if (trust != -1) {
 						agent.setAgentTrust(j, trust);
+						
+						// if this agent is a good choice, try to add it to the best options of the first
+						agent.evaluateOption(j);
+					}
+					
 					/*if (trust < 1 &&  i==0 && j==1)
 							System.out.println(trust);*/
 
 				}
 			}
-			// TODO: erase prints of stuff for testing
-			/*if (agent.overallTrust<1.0 && i==0)
-					System.out.println(agent.overallTrust);*/
 
+	
+
+			// tries to get a connection
+			for (int b=0; b!=agent.bestOptions.size(); b++) {
+				
+				int optionId = agent.bestOptions.get(b);
+				TrustMeAgent ag = (TrustMeAgent)agentList.get(optionId);
+				
+				// sends request
+				if(ag.acceptRequest(agent)) {
+					
+					// request was accepted, so create connection
+					System.out.println("CONNECTED--------------------");
+
+					((TrustMeAgent)agentList.get(i)).connected = true;
+					((TrustMeAgent)agentList.get(i)).connectionId = b;
+					
+					// creates edge
+					TrustMeEdge edge = new TrustMeEdge ((Node)agentList.get(i), (Node)agentList.get(optionId), Color.red);
+					((Node)agentList.get(i)).addOutEdge (edge);
+					
+					break;
+				}
+			}
+			
+			
 			// probability of mutation
 			double probMutate = agent.randVal();
 			if (probMutate <= 0.25)

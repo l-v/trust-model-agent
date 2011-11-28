@@ -1,4 +1,4 @@
-package TrustMe;
+
 
 import uchicago.src.sim.network.DefaultDrawableNode;
 //import uchicago.src.sim.gui.Drawable;
@@ -48,6 +48,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	private LinkedList<String> allAttributes;
 	private LinkedList<String> keyAttributes; //NEAT, OUTGOING, NICE, ACTIVE, RESPONSIBLE 
 	
+	private int maxOptions = 3; // numero maximo de agentes com quem tentar conexÃ£o
 	private double diffQuotient = 0.5; // diferenÃ§a mÃ¡xima aceite
 	private double picky = 0.2; //intervalo de avaliaï¿½ï¿½o de agentes [-picky, picky]
 	//neat_agente1 = 0.5 & neat_agente2 = 0.4
@@ -62,8 +63,13 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	Map<Integer, Double> agentAlpha; // Map<agentIndex, agentAlpha>
 	
 	
+	LinkedList<Integer> bestOptions = new LinkedList<Integer>();
+	// agentID to whom this one is connected (should it be placed here at all??) 
+	int connectionId = -1;
+	boolean connected;
+	
 	// overall trust based on the default values
-	double overallTrust = 0.0;
+	//double overallTrust = 0.0;
 	//double alpha = -1;
 	
 	///////////////////////NODE
@@ -77,6 +83,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	    
 	    this.who = who;
 		this.group = who;
+		connected = false;
 		
 		agentTrust = new HashMap<Integer, Double>();
 		agentAlpha = new HashMap<Integer, Double>();
@@ -176,7 +183,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		double comp = attrValue1 - attrValue2;
 
 		// aceite se attrb do agente 2 foi maior que o de 1, 
-		//ou se diferença não for maior que picky
+		//ou se diferenï¿½a nï¿½o for maior que picky
 		if (Math.abs(comp) <= picky || attrValue1 < attrValue2)
 			return true;
 		
@@ -202,7 +209,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		}
 	}
 	
-	public double getTrust(TrustMeAgent agent, int index) {
+	public double getTrust(TrustMeAgent agent) {
 		
 		// trust = delta * sin(alpha) + delta
 		// alpha = alpha0 + lambda*omega
@@ -212,6 +219,8 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		double posTraits = 0;
 		double negTraits = 0;
 		
+		int index = agent.who;
+		
 		//checks list elements
 		int numAttr = traits.size();
 		for (int i=0; i!=numAttr; i++) {
@@ -219,11 +228,12 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			String trait = allAttributes.get(i);
 			
 			// checks if agents are too different
-			if (Math.abs(traits.get(trait) - agent.traits.get(trait)) > diffQuotient)
+			/*if (Math.abs(traits.get(trait) - agent.traits.get(trait)) > diffQuotient)
 				return -1;
+			*/
 			
 			// checks if it fulfills key attributes
-			else if (keyAttributes.contains(trait)) {
+			/*else*/ if (keyAttributes.contains(trait)) {
 				
 				if (pickyRange(agent, trait)) 
 					posTraits++;
@@ -275,4 +285,76 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		double trust = delta * Math.sin(agentAlpha.get(index)) + delta;
 		return trust;
 	}
+	
+	
+	
+	/***
+	 * Evaluates trust of the new agent, and puts it in an ordered list of choices 
+	 * @param agentId - 'external agent' to be evaluated
+	 */
+	public void evaluateOption(int agentId) {
+		
+		int numOptions = bestOptions.size();
+		double newTrustVal = agentTrust.get(agentId);
+		
+		
+		for (int i=0; i!= maxOptions; i++) {
+			
+			// if no options have been added yet, add new option to the ordered list
+			if (numOptions < maxOptions) {
+				
+				if (i>=numOptions) {
+					bestOptions.add(agentId);
+				}
+				
+				else if (newTrustVal > agentTrust.get(bestOptions.get(i))){
+					bestOptions.add(i, agentId);
+				}
+			}
+			
+			// checks if new agent is better than the ones previously evaluated
+			else if (newTrustVal > agentTrust.get(bestOptions.get(i))) {
+				bestOptions.set(i, agentId);
+				return;
+			}
+		}
+
+	}
+	
+	public void purgeBestOptions() {
+		bestOptions.clear();
+	}
+	
+	
+	public boolean acceptRequest(TrustMeAgent agent) {
+		
+		System.out.println("agent.who = " + agent.who);
+		
+		if (connected)
+			return false;
+		
+		else if (bestOptions.contains(agent.getWho())) {
+			
+			// still not sure where connections will be made, therefore
+			// private int connectionId still temporary solution
+			connectionId = agent.getWho();
+			connected = true;
+			
+			return true;
+		}
+		
+		//TODO: can any other agents be accepted? 
+		// insert minimum trust level here (if we're still doing that)
+		else if (agentTrust.get(agent.getWho()) > 0.7) {
+			
+			connectionId = agent.getWho();
+			connected = true;
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	
 }
