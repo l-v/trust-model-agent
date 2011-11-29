@@ -1,3 +1,4 @@
+package TrustMe;
 
 
 import uchicago.src.sim.network.DefaultDrawableNode;
@@ -11,10 +12,9 @@ import java.util.*;
 public class TrustMeAgent extends DefaultDrawableNode {
 	private int who;
 	private int group;
-	private Color color;
 	
 	//////Node stuff
-	private double xPos, yPos;
+	private double spaceSizeX, spaceSizeY;
 	////
 	
 	/***
@@ -66,19 +66,19 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	LinkedList<Integer> bestOptions = new LinkedList<Integer>();
 	// agentID to whom this one is connected (should it be placed here at all??) 
 	int connectionId = -1;
-	boolean connected;
+	private boolean connected;
 	
 	// overall trust based on the default values
 	//double overallTrust = 0.0;
 	//double alpha = -1;
 	
 	///////////////////////NODE
-	public TrustMeAgent(double xpos, double ypos/*, NetworkDrawable drawable*/, int who) {
+	public TrustMeAgent(double spaceSizeX, double spaceSizeY/*, NetworkDrawable drawable*/, int who, int xpos, int ypos) {
 	    //super(drawable);
-	    this.xPos = xpos;
-	    this.yPos = ypos;
+	    this.spaceSizeX = spaceSizeX;
+	    this.spaceSizeY = spaceSizeY;
 	    
-	    OvalNetworkItem drawable = new OvalNetworkItem (xPos, yPos);
+	    OvalNetworkItem drawable = new OvalNetworkItem (xpos, ypos);
     	setDrawable(drawable);
 	    
 	    this.who = who;
@@ -142,13 +142,12 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	}
 
 	//Getter/Setters
+	public boolean getConnected() { return connected; }
+	public void setConnected(boolean c) { connected = c; }
 	public int getWho(){ return who; }
 
 	public void setGroup(int group) { this.group = group; }
 	public int getGroup() { return group; }
-
-	public void setColor(Color color) { this.color = color; }
-	public Color getColor(){ return color; }
 	
 	public void setAgentTrust(int index, double trust) {
 		agentTrust.put(index, trust);
@@ -193,7 +192,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	public void mutate() {
 		
 		Random rand = new Random();
-		int rn_attributes = rand.nextInt(5);
+		int rn_attributes = rand.nextInt(3);
 		
 		LinkedList<String> mutateAttr = new LinkedList<String>(); 
 		
@@ -242,15 +241,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			}
 			
 		}
-		/*int numAttr = keyAttributes.size();
-		for (int i=0; i!=numAttr; i++) {
-			
-			String traitWanted = keyAttributes.get(i);
-			if (pickyRange(agent, traitWanted)) 
-				posTraits++;
-			else
-				negTraits++;
-		}*/
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
@@ -293,21 +283,18 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	 * @param agentId - 'external agent' to be evaluated
 	 */
 	public void evaluateOption(int agentId) {
-		
 		int numOptions = bestOptions.size();
-		double newTrustVal = agentTrust.get(agentId);
+		double newTrustVal = agentTrust.get(agentId);		
 		
-		
-		for (int i=0; i!= maxOptions; i++) {
+		for (int i = 0; i != maxOptions; i++) {
 			
 			// if no options have been added yet, add new option to the ordered list
 			if (numOptions < maxOptions) {
 				
-				if (i>=numOptions) {
+				if (i >= numOptions) {
 					bestOptions.add(agentId);
 				}
-				
-				else if (newTrustVal > agentTrust.get(bestOptions.get(i))){
+				else if (newTrustVal > agentTrust.get(bestOptions.get(i))) {
 					bestOptions.add(i, agentId);
 				}
 			}
@@ -318,13 +305,11 @@ public class TrustMeAgent extends DefaultDrawableNode {
 				return;
 			}
 		}
-
 	}
 	
 	public void purgeBestOptions() {
 		bestOptions.clear();
 	}
-	
 	
 	public boolean acceptRequest(TrustMeAgent agent) {
 		
@@ -332,7 +317,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		if (connected)
 			return false;
-		
 		else if (bestOptions.contains(agent.getWho())) {
 			
 			// still not sure where connections will be made, therefore
