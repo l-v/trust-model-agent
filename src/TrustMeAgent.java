@@ -1,4 +1,3 @@
-package TrustMe;
 
 
 import uchicago.src.sim.network.DefaultDrawableNode;
@@ -48,8 +47,10 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	private LinkedList<String> allAttributes;
 	private LinkedList<String> keyAttributes; //NEAT, OUTGOING, NICE, ACTIVE, RESPONSIBLE 
 	
+	
+	private double minimumTrust = 0.6; // confiança mínima necessária
 	private int maxOptions = 3; // numero maximo de agentes com quem tentar conexão
-	private double diffQuotient = 0.5; // diferença máxima aceite
+	private double diffQuotient = 0.6; // diferença máxima aceite
 	private double picky = 0.2; //intervalo de avalia��o de agentes [-picky, picky]
 	//neat_agente1 = 0.5 & neat_agente2 = 0.4
 	//0.5 - 0.4 = 0.1 <-- picky as 0.2 accepts!
@@ -192,19 +193,35 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	public void mutate() {
 		
 		Random rand = new Random();
-		int rn_attributes = rand.nextInt(3);
+		
+		// number of attributes to be mutates
+		int rn_attributes = rand.nextInt(2);
 		
 		LinkedList<String> mutateAttr = new LinkedList<String>(); 
 		
+		
+		/* old way
 		while (mutateAttr.size() != rn_attributes) {
 
 			int attribute = rand.nextInt(5);
 			addListAttribute(allAttributes.get(attribute), mutateAttr);
-		}
+		}*/
 
 		for (int i=0; i!=rn_attributes; i++) {
 
-			traits.put(mutateAttr.get(i),randVal());
+			// chooses random attribute to modify
+			int attr = rand.nextInt(5);
+			
+			// mutates the attribute by adding the values -1, 0, or 1
+			double attrModifier = (rand.nextInt(3)/10.0) - 1;
+			double newAttr = traits.get(allAttributes.get(attr)) + attrModifier;
+	
+			// makes change to agent
+			traits.put(allAttributes.get(attr), newAttr);
+			
+			// old way
+			//traits.put(mutateAttr.get(i),randVal());
+			//traits.put(mutateAttr.get(i), arg1)
 		}
 	}
 	
@@ -218,7 +235,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		double posTraits = 0;
 		double negTraits = 0;
 		
-		int index = agent.who;
+		int index = agent.getWho();
 		
 		//checks list elements
 		int numAttr = traits.size();
@@ -244,7 +261,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
-		System.out.println("lambda: " + lambda);
+		if (who==-1) System.out.println("lambda: " + lambda);
 
 		// if alpha wasn't initialized yet
 		if(!agentAlpha.containsKey(index)) {
@@ -259,7 +276,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			double oldAlpha = agentAlpha.get(index);
 			
 			double newAlpha = oldAlpha + lambda*omega;
-			System.out.println("new alpha: " + newAlpha);
+			if (who==-1) System.out.println("new alpha: " + newAlpha);
 			if (newAlpha > alpha1)
 				agentAlpha.put(index, alpha1);
 			else if (newAlpha < alpha0)
@@ -268,9 +285,12 @@ public class TrustMeAgent extends DefaultDrawableNode {
 				agentAlpha.put(index, newAlpha);
 		}
 		
-		System.out.println("alpha0: " + alpha0);
-		System.out.println("alpha: " + agentAlpha.get(index));
-		System.out.println("alpha1: " + alpha1);
+		if (who==-1) {
+			System.out.println("alpha0: " + alpha0);
+			System.out.println("alpha: " + agentAlpha.get(index));
+			System.out.println("alpha1: " + alpha1);
+		}
+
 				
 		double trust = delta * Math.sin(agentAlpha.get(index)) + delta;
 		return trust;
@@ -285,6 +305,11 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	public void evaluateOption(int agentId) {
 		int numOptions = bestOptions.size();
 		double newTrustVal = agentTrust.get(agentId);		
+		
+		// agent has to have a minimum trust level
+		// makes no sense to consider someone with trust 0.1, even if it's the best option 
+		if (newTrustVal < minimumTrust) 
+			return;
 		
 		for (int i = 0; i != maxOptions; i++) {
 			
@@ -313,7 +338,13 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	
 	public boolean acceptRequest(TrustMeAgent agent) {
 		
-		System.out.println("agent.who = " + agent.who);
+		if (who == 0 | agent.getWho() == 0)
+			System.out.println("agent.who = " + agent.getWho());
+		
+		if (agent.getWho() == who) {
+			System.out.println("\n\n\n\nNOOOOOOOOOOOOOOOOOOOOO D:");
+
+		}
 		
 		if (connected)
 			return false;
