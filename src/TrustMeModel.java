@@ -1,31 +1,30 @@
+package TrustMe;
 
 
 import java.awt.Color;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Vector;
 
 import uchicago.src.reflector.ListPropertyDescriptor;
-import uchicago.src.repastdemos.jiggle.JiggleEdge;
+import uchicago.src.sim.analysis.Histogram;
 import uchicago.src.sim.analysis.NetSequenceGraph;
+import uchicago.src.sim.analysis.OpenSequenceGraph;
+import uchicago.src.sim.analysis.PlotModel;
+import uchicago.src.sim.analysis.Sequence;
 import uchicago.src.sim.engine.BasicAction;
 import uchicago.src.sim.engine.Controller;
 import uchicago.src.sim.engine.Schedule;
 import uchicago.src.sim.engine.SimInit;
 import uchicago.src.sim.engine.SimModelImpl;
-import uchicago.src.sim.engine.SimpleModel;
 import uchicago.src.sim.gui.AbstractGraphLayout;
 import uchicago.src.sim.gui.CircularGraphLayout;
 import uchicago.src.sim.gui.DisplaySurface;
 import uchicago.src.sim.gui.FruchGraphLayout;
 import uchicago.src.sim.gui.KamadaGraphLayout;
-import uchicago.src.sim.gui.LayoutWithDisplay;
 import uchicago.src.sim.gui.Network2DDisplay;
-import uchicago.src.sim.gui.OvalNetworkItem;
-import uchicago.src.sim.gui.RectNetworkItem;
-import uchicago.src.sim.network.DefaultDrawableNode;
 import uchicago.src.sim.network.Node;
 import uchicago.src.sim.util.Random;
 
@@ -37,20 +36,24 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	// Default values
 	private int spaceSizeX = 400;
 	private int spaceSizeY = 400;
-	private int numAgents = 10;
+	private int numAgents = 20;
 	private ArrayList agentList = new ArrayList(numAgents);
+	private int maxDegree = 5;
+	private double numConnects = 0;
 	
 	public HashMap<Integer, Integer> agentsPaired = new HashMap<Integer, Integer>();
 	
 	// Implementation variables
-	private String layoutType = "Fruch";
+	private String layoutType = "CircleLayout";
 	private DisplaySurface dsurf;
 	private Schedule schedule;
 	private AbstractGraphLayout graphLayout;
-	private NetSequenceGraph graph;
+	private OpenSequenceGraph graph;
 	private BasicAction initialAction;
+	private Histogram degreeDist;
+	private boolean showHist = true;
+	private boolean showPlot = true;
 	
-
 	public TrustMeModel() {
 		Vector<String> vect = new Vector<String>();
 		vect.add("CircleLayout");
@@ -85,11 +88,28 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 	public void setStartRemoveAfter(int steps) { initialSteps = steps; }
 	
+	public boolean getDegreeHist() { return showHist; }
+
+	public void setDegreeHist(boolean val) { showHist = val; }
+
+	public boolean getPlot() { return showPlot; }
+
+	public void setPlot(boolean val) { showPlot = val; }
+	
+	public int getMaxDegree() { return maxDegree; }
+
+	public void setMaxDegree(int degree) { maxDegree = degree; }
+	
 	public void begin () {
 	    buildModel ();
 	    buildDisplay ();
 	    buildSchedule ();
 	    dsurf.display ();
+	    
+	    if (showHist) 
+	    	degreeDist.display();
+	    if (showPlot) 
+	    	graph.display();
 	}
 
 	public void setup() {
@@ -105,6 +125,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		dsurf = null;
 	    schedule = null;
 	    graph = null;
+	    degreeDist = null;
 
 	    System.gc ();
 
@@ -118,7 +139,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	}
 	
 	public String[] getInitParam () {
-	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType"};
+	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "MaxDegree", "DegreeHist", "Plot"};
 	    return params;
 	}
 	
@@ -132,34 +153,26 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	    for (int i = 0; i != numAgents; i++) {
 	    	
 	    	// create the Oval nodes.
-	    	int x = Random.uniform.nextIntFromTo (0, spaceSizeX - 1);
-	    	int y = Random.uniform.nextIntFromTo (0, spaceSizeY - 1);
+	    	int x = Random.uniform.nextIntFromTo (0, spaceSizeX - 5);
+	    	int y = Random.uniform.nextIntFromTo (0, spaceSizeY - 5);
 	    	
 	    	// cria o agente
-	    	TrustMeAgent agent = new TrustMeAgent(spaceSizeX, spaceSizeY, i);
-	    	agent.setNodeLabel ("Oval - " + i);
-			agent.setBorderColor (Color.orange);
-			agent.setBorderWidth (4);
-	    	
-			// adds the agent to agentList
-	    	agentList.add(agent);
-	    	/*
-	    	OvalNetworkItem drawable = new OvalNetworkItem (x, y);
-	    	
-			// cria o agente
-			TrustMeAgent agent = new TrustMeAgent(spaceSizeX, spaceSizeY, drawable, i);
-			agent.setNodeLabel ("Oval - " + i);
-			agent.setBorderColor (Color.orange);
-			agent.setBorderWidth (4);
+	    	TrustMeAgent agent = new TrustMeAgent(spaceSizeX, spaceSizeY, i, x, y);
+	    	agent.setColor(Color.green);
+	    	agent.setLabelColor(Color.black);
+	    	agent.setNodeLabel (" " + i);
+			agent.setBorderColor (Color.black);
+			agent.setBorderWidth(2);
 			
 			// adds the agent to agentList
-			agentList.add(agent);*/
+	    	agentList.add(agent);
 	    }
 	    
-	    //Network2DDisplay display = new Network2DDisplay (agentList, spaceSizeX, spaceSizeY);
-	   //Object2DDisplay display = new Object2DDisplay(space);
-	   //dsurf.addDisplayable(display,"Buttons Space");
-	   //dsurf.display();
+	    if (showHist) 
+	    	makeHistogram();
+	    
+	    if (showPlot) 
+	    	makePlot();
 	   
 	   System.out.println("Running BuildModel end");
 	}
@@ -197,13 +210,6 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		dsurf.addZoomable(display);
 		dsurf.setBackground(java.awt.Color.white);
 		addSimEventListener(dsurf);
-		/*
-	    Network2DDisplay display = new Network2DDisplay (agentList, spaceSizeX, spaceSizeY);
-
-	    dsurf.addDisplayableProbeable (display, "TrustMe View");
-	    dsurf.addZoomable (display);
-	    dsurf.setBackground (java.awt.Color.white);
-	    addSimEventListener (dsurf); */
 	    
 	    System.out.println("Running BuildDisplay end");
 	}
@@ -263,6 +269,11 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			graphLayout.updateLayout();
 		}
 		dsurf.updateDisplay();
+		
+		if (showHist) 
+			degreeDist.step();
+	    if (showPlot) 
+	    	graph.step();
 	}
 	
 	public void mainAction() {
@@ -278,15 +289,29 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			// cleans bestOptions list
 			agent.purgeBestOptions();
 			
-			if (agent.connected) {
+			if (agent.getConnected()) {
 				
 				//check if connection must be broken
 				
+				double trust = agent.getTrust((TrustMeAgent) agentList.get(agent.connectionId));
+				agent.setAgentTrust(agent.connectionId, trust);
 				
+				if(trust < 0.5) {
+					((TrustMeAgent) agentList.get(i)).setConnected(false);
+					
+					//quebrar ligacao - como so tem uma, podemos fazer clear
+					((Node)agentList.get(i)).clearOutEdges();
+					((Node)agentList.get(i)).clearInEdges();
+					
+					((Node)agentList.get(agent.connectionId)).clearOutEdges();
+					((Node)agentList.get(agent.connectionId)).clearInEdges();
+					
+					numConnects--;
+				}
 				
 				// probability of mutation
 				double probMutate = agent.randVal();
-				if (probMutate <= 0.25)
+				if (probMutate <= 0.05)
 					agent.mutate();
 				
 				continue;
@@ -297,7 +322,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				//agent.overallTrust = sinalpha(agent);
 
 				System.out.println("i:j  " + i+":"+j);
-				if (((TrustMeAgent)agentList.get(j)).connected)
+				if (((TrustMeAgent)agentList.get(j)).getConnected())
 					continue;
 				
 				/*if (j!=0 && j!=1)
@@ -335,21 +360,23 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 					// request was accepted, so create connection
 					System.out.println("CONNECTED--------------------");
 
-					((TrustMeAgent)agentList.get(i)).connected = true;
+					((TrustMeAgent)agentList.get(i)).setConnected(true);
 					((TrustMeAgent)agentList.get(i)).connectionId = b;
 					
 					// creates edge
 					TrustMeEdge edge = new TrustMeEdge ((Node)agentList.get(i), (Node)agentList.get(optionId), Color.red);
 					((Node)agentList.get(i)).addOutEdge (edge);
 					
+					numConnects++;
+					
 					break;
 				}
 			}
-			
+
 			
 			// probability of mutation
 			double probMutate = agent.randVal();
-			if (probMutate <= 0.25)
+			if (probMutate <= 0.05)
 				agent.mutate();
 		}
 
@@ -369,6 +396,11 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			graphLayout.updateLayout();
 		}
 		dsurf.updateDisplay();
+		
+		if (showHist) 
+			degreeDist.step();
+		if (showPlot) 
+			graph.step();
 	}
 
 	public void buildSchedule () {
@@ -379,6 +411,42 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	    schedule.scheduleActionBeginning(initialSteps + 1, this, "mainAction");
 		
 		System.out.println("Running BuildSchedule end");
+	}
+
+	/*
+	 * Creates a histogram of the degree distribution.
+	 */
+	private void makeHistogram() {
+
+		degreeDist = new Histogram("Degree Distribution", maxDegree + 1, 0,
+				maxDegree + 1, this);
+
+		degreeDist.createHistogramItem("Degree Distribution", agentList,
+				"getOutDegree");
+	}
+
+	/*
+	 * Creates a Plot of the Clustering Coefficient, the avg. density,
+	 * and the component count.
+	 */
+	private void makePlot() {		
+		graph = new OpenSequenceGraph("Connections between Agents", this);
+		graph.setAxisTitles("time", "number of Connections");
+		graph.setYRange(0, numAgents/2);
+		// plot number of the current connections
+		graph.addSequence("Number of connections", new Sequence() {
+			public double getSValue() {
+				return numConnects;
+			}
+		});
+
+		graph.display();
+
+		/*
+		graph = new NetSequenceGraph("Network Stats", this, "./net.txt", PlotModel.CSV, agentList);
+		graph.setAxisTitles("Time", "Statistic Value");
+		graph.setXRange(0, 50);
+		graph.setYRange(0, numAgents);*/
 	}
 	
 	public static void main(String[] args) {
