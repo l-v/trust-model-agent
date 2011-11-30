@@ -340,39 +340,75 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	 * @param agentId - 'external agent' to be evaluated
 	 */
 	public void evaluateOption(int agentId) {
+		
 		int numOptions = bestOptions.size();
 		double newTrustVal = agentTrust.get(agentId);		
+		
+		if (agentTrust.size()==0) {
+			System.out.println("WARNING: " + who + " has no records!");
+		}
+		
+		//TODO erase all this junk of prints
+		if (false && (who==0 || who == 3)) {
+			String bestOptionsTrust = "";
+			for (int i=0; i!=bestOptions.size(); i++) {
+				bestOptionsTrust += agentTrust.get((Object)bestOptions.get(i));
+				if (i!=bestOptions.size()-1)
+					bestOptionsTrust += "; ";
+				else
+					bestOptionsTrust += "]";
+			}
+			
+			//System.out.println("bestOptions of " + who + "-> " + bestOptionsTrust);
+			if (bestOptions.size() == 3) {
+				System.out.println("trust in " + bestOptions.get(0) + "=" + agentTrust.get(bestOptions.get(0)));
+				System.out.println("trust in " + bestOptions.get(1) + "=" + agentTrust.get(bestOptions.get(1)));
+				System.out.println("trust in " + bestOptions.get(2) + "=" + agentTrust.get(bestOptions.get(2)));
+			}
+		}
+			
+		
+		// if agent already on bestOptions, remove it and update the list 
+		if (bestOptions.contains(agentId)) {
+			bestOptions.remove((Object)agentId);
+		}
 		
 		// agent has to have a minimum trust level
 		// makes no sense to consider someone with trust 0.1, even if it's the best option 
 		if (newTrustVal < minimumTrust) 
 			return;
 		
-		for (int i = 0; i != maxOptions; i++) {
+		
+		// insert new trust value on list
+		if (bestOptions.size() == 0) {
+			bestOptions.add(agentId);
+			return;
+		}
+		
+		for (int i=0; i!=bestOptions.size(); i++) {
 			
-			// if no options have been added yet, add new option to the ordered list
-			if (numOptions < maxOptions) {
-				
-				if (i >= numOptions) {
-					bestOptions.add(agentId);
-				}
-				else if (newTrustVal > agentTrust.get(bestOptions.get(i))) {
-					bestOptions.add(i, agentId);
-				}
-			}
-			
-			// checks if new agent is better than the ones previously evaluated
-			else if (newTrustVal > agentTrust.get(bestOptions.get(i))) {
+			double oldTrust = agentTrust.get(bestOptions.get(i));
+			if (newTrustVal > oldTrust) {
 				bestOptions.set(i, agentId);
 				return;
 			}
 		}
+		
+		if (bestOptions.size() < maxOptions) {
+			bestOptions.add(agentId);
+			return;
+		}
+
+		if (bestOptions.size() == 0)
+			System.out.println("WARNING 2: " + who + " passed evaluation with " + bestOptions.toString());
+
 	}
 	
 	public void purgeBestOptions() {
 		bestOptions.clear();
 	}
 	
+
 	public boolean acceptRequest(TrustMeAgent agent) {
 		
 		if (who == 0 | agent.getWho() == 0)

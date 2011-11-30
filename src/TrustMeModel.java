@@ -313,7 +313,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			TrustMeAgent agent = (TrustMeAgent) agentList.get(i);
 		
 			// cleans bestOptions list
-			((TrustMeAgent)agentList.get(i)).purgeBestOptions();
+			//((TrustMeAgent)agentList.get(i)).purgeBestOptions();
 			
 			if (agent.getConnected()) {
 				
@@ -323,7 +323,8 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				//agent.setAgentTrust(agent.connectionId, trust);
 				((TrustMeAgent)agentList.get(i)).setAgentTrust(agent.connectionId, trust);
 				
-				if (i==0) System.out.println("Debug: Trust of 0 in " + agent.connectionId + ": " + trust);
+				if (i==0 || agent.connectionId==0) System.out.println("Debug: Trust of " + i + " in " + agent.connectionId + ": " + trust);
+				
 				
 				// edits connection color based on the level of trust
 				// maximum trust: black; high trust: red; medium trust: orange 
@@ -331,6 +332,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				
 				if(trust < trustBreak) { //TODO mudar isto (0.0 é só para os testes)
 					breakConnection(i);
+					agent.evaluateOption(agent.connectionId);
 				}
 				
 				
@@ -506,9 +508,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				((Node)agentList.get(agentIndex)).addOutEdge (edge);
 				
 				
-				if (agentIndex==0) {
-					System.out.println("0 created edge to " + optionId);
-					System.out.println("0 now connected to " + ((TrustMeAgent)agentList.get(0)).connectionId);
+				if (agentIndex==0 || agentIndex == 5 || agentIndex == 11) {
+					System.out.println(agentIndex + " created edge to " + optionId);
+					System.out.println(agentIndex + " now connected to " + ((TrustMeAgent)agentList.get(agentIndex)).connectionId);
+					System.out.println(agentIndex + " best options are " + ((TrustMeAgent)agentList.get(agentIndex)).bestOptions.toString());
 				}
 				
 				numConnects++;
@@ -549,12 +552,22 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 		int connectedAgent = ((TrustMeAgent)agentList.get(agentIndex)).connectionId;
 		((TrustMeAgent)agentList.get(connectedAgent)).setConnected(false);
+		//((TrustMeAgent)agentList.get(connectedAgent)).connectionId = -1;
 		
 		((Node)agentList.get(connectedAgent)).clearOutEdges();
 		((Node)agentList.get(connectedAgent)).clearInEdges();
+		
+		//((TrustMeAgent) agentList.get(agentIndex)).connectionId = -1;
 
 		numConnects--;
+		System.out.println("BREAK " + agentIndex + "-" + connectedAgent);
+		
+		if (agentIndex == 0 || connectedAgent == 0) {
+		System.out.println("break: trust of " + agentIndex + " in " + connectedAgent + ": " + ((TrustMeAgent) agentList.get(agentIndex)).getTrustIn(connectedAgent));
+		System.out.println("break: trust of " + connectedAgent + " in " + agentIndex + ": " + ((TrustMeAgent) agentList.get(connectedAgent)).getTrustIn(agentIndex));
+		}
 	}
+	
 	
 	public void colorEdges(int agentIndex, double trust) {
 		
