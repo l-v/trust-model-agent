@@ -59,11 +59,17 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	private DisplaySurface dsurf;
 	private Schedule schedule;
 	private AbstractGraphLayout graphLayout;
+	
+	// graphs
 	private OpenSequenceGraph graph;
+	
 	private BasicAction initialAction;
 	private Histogram degreeDist;
 	private boolean showHist = true;
 	private boolean showPlot = true;
+	
+	private boolean showReputation = false;
+	private boolean useReputation = false;
 	
 	public TrustMeModel() {
 		Vector<String> vect = new Vector<String>();
@@ -127,6 +133,16 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 	public void setMutationProb(double mutation) { mutationProbability = mutation; }
 	
+	public boolean getShowReputation() { return showReputation; }
+
+	public void setShowReputation(boolean showRep) { showReputation = showRep; }
+	
+	public boolean getUseReputation() { return useReputation; }
+
+	public void setUseReputation(boolean useRep) { useReputation = useRep; }
+	
+	
+	
 	public void begin () {
 	    buildModel ();
 	    buildDisplay ();
@@ -168,7 +184,8 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	//TODO add picky and 'cautioness' from sinalpha formula
 	public String[] getInitParam () {
 	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "MaxDegree", "DegreeHist", "Plot", 
-	    					"pickyLevel", "Caution", "TrustBreak", "MutationProb"};
+	    					"pickyLevel", "Caution", "TrustBreak", "MutationProb",
+	    					"showReputation", "useReputation"};
 	    return params;
 	}
 	
@@ -193,7 +210,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			agent.setBorderColor (Color.black);
 			agent.setBorderWidth(2);
 			
-			agent.setBehaviourVariables(pickyLevel, caution);
+			agent.setBehaviourVariables(pickyLevel, caution, useReputation);
 			
 			// adds the agent to agentList
 	    	agentList.add(agent);
@@ -303,6 +320,9 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	}
 	
 	public void mainAction() {
+		
+		double overallTrust = 0.0;
+		
 		// calculate trust for all agents
 		int numAgents = agentList.size();
 		for (int i = 0; i != numAgents; i++) {
@@ -320,24 +340,24 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				//check if connection must be broken
 				
 				double trust = agent.getTrust((TrustMeAgent) agentList.get(agent.connectionId));
-				//agent.setAgentTrust(agent.connectionId, trust);
-				((TrustMeAgent)agentList.get(i)).setAgentTrust(agent.connectionId, trust);
+				agent.setAgentTrust(agent.connectionId, trust);
+				//((TrustMeAgent)agentList.get(i)).setAgentTrust(agent.connectionId, trust);
 				
 				if (i==0 || agent.connectionId==0) System.out.println("Debug: Trust of " + i + " in " + agent.connectionId + ": " + trust);
 				
 				
 				// edits connection color based on the level of trust
 				// maximum trust: black; high trust: red; medium trust: orange 
-				colorEdges(i, trust);
+				colorEdges(agent, trust);
 				
 				if(trust < trustBreak) { //TODO mudar isto (0.0 é só para os testes)
-					breakConnection(i);
+					breakConnection(agent);
 					agent.evaluateOption(agent.connectionId);
 				}
 				
 				
 				// probability of mutation
-				mutate(i);
+				mutate(agent);
 				
 				continue;
 			}
@@ -346,44 +366,41 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			for(int j = 0; j != numAgents; j++) {
 				//agent.overallTrust = sinalpha(agent);
 
-			//	System.out.println("i:j  " + i+":"+j);
-				if (((TrustMeAgent)agentList.get(j)).getConnected())
+
+				if (agent.getConnected())
 					continue;
 				
-				/*if (j!=0 && j!=1)
-					continue;
-				*/
+
 				if (j!=i) {
 					double trust = agent.getTrust((TrustMeAgent) agentList.get(j));
-					//System.out.println("i:j -> " + i+":"+j);
+		
+					
 					// TODO: functionality disabled
 					// if agent is not too different, consider him an option
 					if (trust != -1) {
 						//agent.setAgentTrust(j, trust);
-						((TrustMeAgent)agentList.get(i)).setAgentTrust(j, trust);
+						agent.setAgentTrust(j, trust);
 						
 						// if this agent is a good choice, try to add it to the best options of the first
 						//agent.evaluateOption(j);
-						((TrustMeAgent)agentList.get(i)).evaluateOption(j);
+						agent.evaluateOption(j);
 					}
 					
-					/*if (trust < 1 &&  i==0 && j==1)
-							System.out.println(trust);*/
-
 				}
 			}
 
 			// tries to get a connection
-			tryConnection(i);
+			tryConnection(agent);
 
-
-			
-			// probability of mutation
-			mutate(i);
-			/*double probMutate = agent.randVal();
-			 * if (probMutate <= 0.05)
-				agent.mutate();*/
+			mutate(agent);
+			overallTrust += agent.getAverageTrust();	
 		}
+		
+		// add to overallTrust calculation
+		averageTrust = overallTrust/numAgents;
+		
+		if (showReputation || useReputation)
+			calcReputation();
 
 		DecimalFormat myFormatter = new DecimalFormat("###.##");
 		//System.out.println("\nTraits 0: " + ((TrustMeAgent) agentList.get(0)).printTraits());
@@ -444,13 +461,13 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				return numConnects;
 			}
 		});
-		/*
-		graph.addSequence("Mutations", new Sequence() {
+		
+		graph.addSequence("Overall Trust", new Sequence() {
 			public double getSValue() {
-				return numMutations;
+				return averageTrust*10;
 			}
 		});
-		*/
+		
 
 		graph.display();
 
@@ -462,30 +479,38 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	}
 	
 	
-	public void mutate(int agentIndex) {
+	public void mutate(TrustMeAgent agent) {
 		
-		double probMutate = ((TrustMeAgent)agentList.get(agentIndex)).randInteger(100)+1;
-		
+		double probMutate = agent.randInteger(100)+1;
+
 		if (probMutate <= mutationProbability) {
 			System.out.println("MUTATED!!!");
-			((TrustMeAgent)agentList.get(agentIndex)).mutate();
-			
-			if (((TrustMeAgent)agentList.get(agentIndex)).getColor() == Color.green) {
-				((TrustMeAgent)agentList.get(agentIndex)).setColor(Color.lightGray);
-				
-				numMutations++;
+			agent.mutate();
+
+			// color scheme
+			if (!showReputation) {
+				if (agent.getColor() == Color.green) 
+					agent.setColor(Color.lightGray);
+				else 
+					agent.setColor(Color.green);
 			}
 			else {
-				((TrustMeAgent)agentList.get(agentIndex)).setColor(Color.green);
-				numMutations--;
+				if (agent.getBorderColor() == Color.black) {
+					agent.setBorderColor(Color.darkGray);
+					agent.setBorderWidth(agent.getBorderWidth()+1);
+				}
+				else {
+					agent.setBorderColor(Color.black);
+					agent.setBorderWidth(agent.getBorderWidth()-1);
+				}
 			}
+			
+			numMutations++;
 		}
 	}
 
 	
-	public void tryConnection(int agentIndex) {
-		
-		TrustMeAgent agent = (TrustMeAgent)agentList.get(agentIndex);
+	public void tryConnection(TrustMeAgent agent) {
 		
 		for (int b=0; b!=agent.bestOptions.size(); b++) {
 			
@@ -497,17 +522,20 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			if (((TrustMeAgent)agentList.get(optionId)).acceptRequest(agent)) {
 				
 				// request was accepted, so create connection
-				System.out.println("CONNECTED--------------------");
+				System.out.println("CONNECTED---" + agent.getWho() + "-" + optionId + "----------------");
 
-				((TrustMeAgent)agentList.get(agentIndex)).setConnected(true);
-				((TrustMeAgent)agentList.get(agentIndex)).connectionId = optionId;
+				//((TrustMeAgent)agentList.get(agentIndex)).setConnected(true);
+				//((TrustMeAgent)agentList.get(agentIndex)).connectionId = optionId;
+				agent.setConnected(true);
+				agent.connectionId = optionId;
 				
 
 				// creates edge
-				TrustMeEdge edge = new TrustMeEdge ((Node)agentList.get(agentIndex), (Node)agentList.get(optionId), Color.green);
-				((Node)agentList.get(agentIndex)).addOutEdge (edge);
+				TrustMeEdge edge = new TrustMeEdge ((Node)agent, (Node)agentList.get(optionId), Color.green);
+				((Node)agent).addOutEdge (edge);
 				
 				
+				int agentIndex = agent.getWho();
 				if (agentIndex==0 || agentIndex == 5 || agentIndex == 11) {
 					System.out.println(agentIndex + " created edge to " + optionId);
 					System.out.println(agentIndex + " now connected to " + ((TrustMeAgent)agentList.get(agentIndex)).connectionId);
@@ -523,70 +551,142 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 					System.out.println("agList:" + agentIndex + "|who:" + ((TrustMeAgent)agentList.get(agentIndex)).getWho());
 				
 					System.out.println("connected:" + ((TrustMeAgent)agentList.get(agentIndex)).connectionId + "|bestOption:"+((TrustMeAgent)agentList.get(b)).getWho());
-					System.out.println("agListReceptor:" + " isCon?->" + ((TrustMeAgent)agentList.get(agentIndex)).getConnected() + " |with who?->"+ ((TrustMeAgent)agentList.get(b)).connectionId);
-					
-					
+					System.out.println("agListReceptor:" + " isCon?->" + ((TrustMeAgent)agentList.get(agentIndex)).getConnected() + " |with who?->"+ ((TrustMeAgent)agentList.get(b)).connectionId);	
 					return;
-	
 				}
-				
 				break;
 			}
 		}
 		
-		if (agentIndex==0 && ((TrustMeAgent)agentList.get(agentIndex)).getConnected()) {
+		if (agent.getWho()==0 && ((TrustMeAgent)agentList.get(agent.getWho())).getConnected()) {
 			System.out.println("0 registered connection to " + ((TrustMeAgent)agentList.get(0)).connectionId);
 		}
 		
 
 	}
 	
-	public void breakConnection(int agentIndex) {
+	public void breakConnection(TrustMeAgent agent) {
 
-		((TrustMeAgent) agentList.get(agentIndex)).setConnected(false);
+		agent.setConnected(false);
+		Node agentNode = (Node)agent;
 		
 
 		//quebrar ligacao - como so tem uma, podemos fazer clear
-		((Node)agentList.get(agentIndex)).clearOutEdges();
-		((Node)agentList.get(agentIndex)).clearInEdges();
+		agentNode.clearOutEdges();
+		agentNode.clearInEdges();
 
-		int connectedAgent = ((TrustMeAgent)agentList.get(agentIndex)).connectionId;
-		((TrustMeAgent)agentList.get(connectedAgent)).setConnected(false);
-		//((TrustMeAgent)agentList.get(connectedAgent)).connectionId = -1;
+		int connectedAgentId = agent.connectionId;
 		
-		((Node)agentList.get(connectedAgent)).clearOutEdges();
-		((Node)agentList.get(connectedAgent)).clearInEdges();
+		TrustMeAgent connectedAgent = (TrustMeAgent)agentList.get(connectedAgentId);
+		Node connectedAgentNode = (Node) connectedAgent;
 		
-		//((TrustMeAgent) agentList.get(agentIndex)).connectionId = -1;
-
+		connectedAgentNode.clearOutEdges();
+		connectedAgentNode.clearInEdges();
+		
+		connectedAgent.setConnected(false);
+		
 		numConnects--;
-		System.out.println("BREAK " + agentIndex + "-" + connectedAgent);
 		
-		if (agentIndex == 0 || connectedAgent == 0) {
-		System.out.println("break: trust of " + agentIndex + " in " + connectedAgent + ": " + ((TrustMeAgent) agentList.get(agentIndex)).getTrustIn(connectedAgent));
-		System.out.println("break: trust of " + connectedAgent + " in " + agentIndex + ": " + ((TrustMeAgent) agentList.get(connectedAgent)).getTrustIn(agentIndex));
+		//TODO erase print junk in the grand finale
+		System.out.println("BREAK " + agent.getWho() + "-" + connectedAgent);
+		
+		if (agent.getWho() == 0 || connectedAgentId == 0) {
+		System.out.println("break: trust of " + agent.getWho() + " in " + connectedAgentId + ": " + agent.getTrustIn(connectedAgentId));
+		System.out.println("break: trust of " + connectedAgentId + " in " + agent.getWho() + ": " + connectedAgent.getTrustIn(agent.getWho()));
 		}
 	}
 	
 	
-	public void colorEdges(int agentIndex, double trust) {
+	/**
+	 * Colors edges according to the trust between connected agents
+	 * Higer trust = red; Lower trust = yellow
+	 * @param agent
+	 * @param trust
+	 */
+	public void colorEdges(TrustMeAgent agent, double trust) {
 		
 		Color edgeColor = Color.red;
+		Node agentNode = (Node)agent;
 		
-		if (trust > 0.9) {edgeColor = Color.red;}
-		else if (trust > 0.7) { edgeColor = Color.orange;}
+		double connectedAgentTrust = ((TrustMeAgent)agentList.get(agent.connectionId)).getTrustIn(agent.getWho());
+		double avgTrust = (trust + connectedAgentTrust)/2.0;
+		
+		if (avgTrust > 0.9) {edgeColor = Color.red;}
+		else if (avgTrust > 0.7) { edgeColor = Color.orange;}
 		else {edgeColor = Color.yellow;}
 
-		int outEdges = ((Node)agentList.get(agentIndex)).getOutEdges().size();
-		int inEdges = ((Node)agentList.get(agentIndex)).getOutEdges().size();
+		int outEdges = agentNode.getOutEdges().size();
+		int inEdges = agentNode.getInEdges().size();
 		
 		if (outEdges > 0) {
-			((TrustMeEdge)((Node)agentList.get(agentIndex)).getOutEdges().get(0)).setColor(edgeColor);
+			((TrustMeEdge)(agentNode.getOutEdges().get(0))).setColor(edgeColor);
 		}
 		if (inEdges > 0) {
-			((TrustMeEdge)((Node)agentList.get(agentIndex)).getOutEdges().get(0)).setColor(edgeColor);
-		}
+			((TrustMeEdge)((Node)agentList.get(agent.getWho())).getOutEdges().get(0)).setColor(edgeColor);
+		}	
+	}
+	
+	
+	/**
+	 * Colors nodes according to reputation of agents in the system
+	 * Reputation: bad = -1, neutral = 0, good = 1 
+	 */
+	public void calcReputation() {
 		
+		for (int i=0; i!=numAgents; i++) {
+			
+			float rep = 0;
+			
+			for (int j=0; j!=numAgents; j++) {
+				
+				if (j==i)
+					continue;
+				
+				TrustMeAgent agent2 = (TrustMeAgent) agentList.get(j);
+				double trust = agent2.getTrustIn(i);
+				
+				rep += repScale(trust);
+			}
+			
+			System.out.println("Trust " + i + ": " + rep);
+			rep = rep/(numAgents-1);
+			System.out.println("Trust2 " + i + ": " + rep);
+			System.out.println("Rep " + i + ": " + Math.round(rep));
+			
+			int agentReputation = Math.round(rep);
+			TrustMeAgent agent = (TrustMeAgent)agentList.get(i);
+			agent.setReputation(agentReputation);
+			
+			if (showReputation) {
+				Color nodeColor = repColorCode(Math.round(rep));
+				((TrustMeAgent)agentList.get(i)).setColor(nodeColor);
+			}
+		}
+	}
+	
+	
+	/**
+	 * Converts trust value into a scale of [-1, 0], used to calculate reputation
+	 * @param trust
+	 * @return
+	 */
+	public int repScale(double trust) {
+		
+		if (trust >= 0.7) // [0.7,1.0] -> high rep
+			return 1;
+		else if (trust >=0.4) // [0.4, 0.6] -> medium rep
+			return 0;
+		else // [0.0, 0.3] -> low rep
+			return -1;
+	}
+	
+	public Color repColorCode(int repValue) {
+		
+		switch (repValue) {
+		case -1: return Color.pink;
+		case 0: return Color.green;
+		default: return Color.white;
+		}
 	}
 	
 	

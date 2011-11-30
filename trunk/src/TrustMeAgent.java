@@ -68,6 +68,8 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	// agentID to whom this one is connected (should it be placed here at all??) 
 	int connectionId = -1;
 	private boolean connected;
+	private boolean useReputation = false; // whether reputation is used in the calculation of trust of not
+	private int reputation = 0; // reputation of the agent
 	
 	// overall trust based on the default values
 	//double overallTrust = 0.0;
@@ -150,40 +152,17 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	public void setGroup(int group) { this.group = group; }
 	public int getGroup() { return group; }
 	
+	public void setReputation(int rep) { reputation = rep;}
+	public int getReputation() { return reputation;}
+	
 	public void setAgentTrust(int index, double trust) {
 		agentTrust.put(index, trust);
 	}
 	
-	public void setBehaviourVariables(double pickyLevel, int cautionLevel) {
+	public void setBehaviourVariables(double pickyLevel, int cautionLevel, boolean useRep) {
 		picky = pickyLevel;
 		omega = Math.PI/(cautionLevel*1.0); // to make sure the division result is a double
-	}
-	
-	
-	/***
-	 * Gets average trust placed on other agents
-	 * @return
-	 */
-	public double getAverageTrust() {
-		
-		if (agentTrust.size() == 0)
-			return -1;
-		
-		
-		double trustSum = 0.0;
-		
-		Set<Integer> agentsRecorded = agentTrust.keySet();
-		Iterator<Integer> agentsIterator = agentsRecorded.iterator();
-		
-		trustSum += agentTrust.get(agentsIterator);
-		
-		while (agentsIterator.hasNext()) {
-			
-			agentsIterator.next();
-			trustSum += agentTrust.get(agentsIterator);
-		}
-		
-		return trustSum/agentsRecorded.size();
+		useReputation = useRep;
 	}
 	
 	public double randVal() {
@@ -210,6 +189,31 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	
 	public Double getTrustIn(int index) {
 		return agentTrust.get(index);
+	}
+	
+	
+	/***
+	 * Gets average trust placed on other agents
+	 * @return
+	 */
+	public Double getAverageTrust() {
+		
+		int numRecords = agentTrust.size();
+		
+		if (numRecords == 0) 
+			return -1.0;
+
+		
+		double trustSum = 0.0;
+
+		Collection<Double> trustValues = agentTrust.values();
+		Iterator<Double> trustIt = trustValues.iterator();
+
+		while (trustIt.hasNext()) {
+			trustSum += trustIt.next();
+		}
+
+		return trustSum/numRecords;
 	}
 	
 	//check if number of attributes chosen to evaluate are within the chosen picky range
@@ -295,6 +299,17 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			}
 			
 		}
+		
+		// takes reputation into account
+		if (useReputation) {
+			int rep = agent.getReputation();
+			
+			if (rep == 1)
+				posTraits++;
+			else if (rep == -1)
+				negTraits++;
+		}
+			
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
