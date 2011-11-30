@@ -42,6 +42,8 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	private double numConnects = 0;
 	private double mutationProbability = 0.000001;
 	private double trustBreak = 0.4; // minimum level of trust that can be reached before a connection breaks
+	private boolean multipleConnections = false; // if true, agent can connect to other 3 agents; if false, only pairs are allowed
+	
 	
 	public HashMap<Integer, Integer> agentsPaired = new HashMap<Integer, Integer>();
 	
@@ -140,6 +142,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		System.out.println("Running setup end");
 	}
 	
+	//TODO add picky and 'cautioness' from sinalpha formula
 	public String[] getInitParam () {
 	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "MaxDegree", "DegreeHist", "Plot"};
 	    return params;
@@ -426,7 +429,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	
 	public void mutate(int agentIndex) {
 		
-		double probMutate = ((TrustMeAgent)agentList.get(agentIndex)).randVal();
+		double probMutate = ((TrustMeAgent)agentList.get(agentIndex)).randInteger(100);
 		
 		if (probMutate < mutationProbability) {
 			System.out.println("MUTATED!!!");
@@ -495,12 +498,15 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	public void breakConnection(int agentIndex) {
 
 		((TrustMeAgent) agentList.get(agentIndex)).setConnected(false);
+		
 
 		//quebrar ligacao - como so tem uma, podemos fazer clear
 		((Node)agentList.get(agentIndex)).clearOutEdges();
 		((Node)agentList.get(agentIndex)).clearInEdges();
 
 		int connectedAgent = ((TrustMeAgent)agentList.get(agentIndex)).connectionId;
+		((TrustMeAgent)agentList.get(connectedAgent)).setConnected(false);
+		
 		((Node)agentList.get(connectedAgent)).clearOutEdges();
 		((Node)agentList.get(connectedAgent)).clearInEdges();
 
@@ -511,9 +517,9 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		
 		Color edgeColor = Color.red;
 		
-		if (trust > 0.9) {edgeColor = Color.black;}
-		else if (trust > 0.7) { edgeColor = Color.red;}
-		else {edgeColor = Color.orange;}
+		if (trust > 0.9) {edgeColor = Color.red;}
+		else if (trust > 0.7) { edgeColor = Color.orange;}
+		else {edgeColor = Color.yellow;}
 
 		int outEdges = ((Node)agentList.get(agentIndex)).getOutEdges().size();
 		int inEdges = ((Node)agentList.get(agentIndex)).getOutEdges().size();

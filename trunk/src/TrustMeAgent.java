@@ -159,6 +159,11 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		return rand.nextInt(11)/10.0;
 	}
 	
+	public double randInteger(int upLimit) {
+		Random rand = new Random();
+		return rand.nextInt(upLimit);
+	}
+	
 	public String printTraits() {
 		String agent = "";
 		
@@ -341,10 +346,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		if (who == 0 | agent.getWho() == 0)
 			System.out.println("agent.who = " + agent.getWho());
 		
-		if (agent.getWho() == who) {
-			System.out.println("\n\n\n\nNOOOOOOOOOOOOOOOOOOOOO D:");
-
-		}
 		
 		if (connected)
 			return false;
