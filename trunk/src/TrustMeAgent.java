@@ -154,6 +154,38 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		agentTrust.put(index, trust);
 	}
 	
+	public void setBehaviourVariables(double pickyLevel, int cautionLevel) {
+		picky = pickyLevel;
+		omega = Math.PI/(cautionLevel*1.0); // to make sure the division result is a double
+	}
+	
+	
+	/***
+	 * Gets average trust placed on other agents
+	 * @return
+	 */
+	public double getAverageTrust() {
+		
+		if (agentTrust.size() == 0)
+			return -1;
+		
+		
+		double trustSum = 0.0;
+		
+		Set<Integer> agentsRecorded = agentTrust.keySet();
+		Iterator<Integer> agentsIterator = agentsRecorded.iterator();
+		
+		trustSum += agentTrust.get(agentsIterator);
+		
+		while (agentsIterator.hasNext()) {
+			
+			agentsIterator.next();
+			trustSum += agentTrust.get(agentsIterator);
+		}
+		
+		return trustSum/agentsRecorded.size();
+	}
+	
 	public double randVal() {
 		Random rand = new Random();
 		return rand.nextInt(11)/10.0;
@@ -361,7 +393,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		//TODO: can any other agents be accepted? 
 		// insert minimum trust level here (if we're still doing that)
-		else if (agentTrust.get(agent.getWho()) > 0.7) {
+		else if (agentTrust.get(agent.getWho()) >= 0.7) {
 			
 			connectionId = agent.getWho();
 			connected = true;

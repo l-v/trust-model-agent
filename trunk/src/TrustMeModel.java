@@ -39,9 +39,16 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	private int numAgents = 20;
 	private ArrayList agentList = new ArrayList(numAgents);
 	private int maxDegree = 5;
+	
 	private double numConnects = 0;
-	private double mutationProbability = 0.000001;
+	private double numMutations = 0;
+	private double averageTrust = 0.0; // average trust in the system
+	
+	private double mutationProbability = 1.0;
 	private double trustBreak = 0.4; // minimum level of trust that can be reached before a connection breaks
+	private int caution = 12; // how many steps does it take to gain the agents' full trust
+	private double pickyLevel = 0.4; // how picky/choosy the agents are when evaluating each other
+	
 	private boolean multipleConnections = false; // if true, agent can connect to other 3 agents; if false, only pairs are allowed
 	
 	
@@ -104,6 +111,22 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 	public void setMaxDegree(int degree) { maxDegree = degree; }
 	
+	public double getTrustBreak() { return trustBreak; }
+
+	public void setTrustBreak(double breakPoint) { trustBreak = breakPoint; }
+	
+	public int getCaution() { return caution; }
+
+	public void setCaution(int cautionLevel) { caution = cautionLevel; }
+	
+	public double getPickyLevel() { return pickyLevel; }
+
+	public void setPickyLevel(double picky) { pickyLevel = picky; }
+	
+	public double getMutationProb() { return mutationProbability; }
+
+	public void setMutationProb(double mutation) { mutationProbability = mutation; }
+	
 	public void begin () {
 	    buildModel ();
 	    buildDisplay ();
@@ -144,7 +167,8 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	
 	//TODO add picky and 'cautioness' from sinalpha formula
 	public String[] getInitParam () {
-	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "MaxDegree", "DegreeHist", "Plot"};
+	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "MaxDegree", "DegreeHist", "Plot", 
+	    					"pickyLevel", "Caution", "TrustBreak", "MutationProb"};
 	    return params;
 	}
 	
@@ -168,6 +192,8 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	    	agent.setNodeLabel (" " + i);
 			agent.setBorderColor (Color.black);
 			agent.setBorderWidth(2);
+			
+			agent.setBehaviourVariables(pickyLevel, caution);
 			
 			// adds the agent to agentList
 	    	agentList.add(agent);
@@ -416,6 +442,13 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				return numConnects;
 			}
 		});
+		/*
+		graph.addSequence("Mutations", new Sequence() {
+			public double getSValue() {
+				return numMutations;
+			}
+		});
+		*/
 
 		graph.display();
 
@@ -429,11 +462,21 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	
 	public void mutate(int agentIndex) {
 		
-		double probMutate = ((TrustMeAgent)agentList.get(agentIndex)).randInteger(100);
+		double probMutate = ((TrustMeAgent)agentList.get(agentIndex)).randInteger(100)+1;
 		
-		if (probMutate < mutationProbability) {
+		if (probMutate <= mutationProbability) {
 			System.out.println("MUTATED!!!");
 			((TrustMeAgent)agentList.get(agentIndex)).mutate();
+			
+			if (((TrustMeAgent)agentList.get(agentIndex)).getColor() == Color.green) {
+				((TrustMeAgent)agentList.get(agentIndex)).setColor(Color.lightGray);
+				
+				numMutations++;
+			}
+			else {
+				((TrustMeAgent)agentList.get(agentIndex)).setColor(Color.green);
+				numMutations--;
+			}
 		}
 	}
 
