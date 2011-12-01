@@ -164,6 +164,9 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	
 	public void setAgentToStalk(int a) { agentStalk = a; }
 	
+	public boolean getOpinionSharing() { return opinionSharing; }
+	
+	public void setOpinionSharing(boolean sharing) { opinionSharing = sharing; }
 	
 	
 	public void begin () {
@@ -213,7 +216,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	public String[] getInitParam () {
 	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "AgentToStalk", "MaxDegree", "DegreeHist", "Plot", 
 	    					"pickyLevel", "Caution", "TrustBreak", "MutationProb",
-	    					"showReputation", "useReputation"};
+	    					"showReputation", "useReputation", "opinionSharing", "learning"};
 	    return params;
 	}
 	
@@ -238,7 +241,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			agent.setBorderColor (Color.black);
 			agent.setBorderWidth(2);
 			
-			agent.setBehaviourVariables(pickyLevel, caution, useReputation, opinionSharing, learning);
+			agent.setBehaviourVariables(pickyLevel, caution, useReputation, learning);
 			
 			// adds the agent to agentList
 	    	agentList.add(agent);
@@ -340,7 +343,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 			if (agent.getConnected()) {
 				
-				double trust = agent.getTrust((TrustMeAgent) agentList.get(agent.connectionId));
+				// 'agent' connected to 'connectedAgent'
+				TrustMeAgent connectedAgent = (TrustMeAgent) agentList.get(agent.connectionId);
+		
+				double trust = agent.getTrust(connectedAgent);
 				agent.setAgentTrust(agent.connectionId, trust);
 				//((TrustMeAgent)agentList.get(i)).setAgentTrust(agent.connectionId, trust);
 				
@@ -357,6 +363,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 					agent.evaluateOption(agent.connectionId);
 				}
 				
+				
+				// get opinions from connected agent
+				if (opinionSharing)
+					agent.getOpinion(connectedAgent);
 				
 				// probability of mutation
 				mutate(agent);
@@ -692,7 +702,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			//System.out.println("Trust " + i + ": " + rep);
 			rep = rep/(numAgents-1);
 			//System.out.println("Trust2 " + i + ": " + rep);
-			if(i==0) System.out.println("Rep " + i + ": " + Math.round(rep));
+			//if(i==0) System.out.println("Rep " + i + ": " + Math.round(rep));
 			
 			int agentReputation = Math.round(rep);
 			TrustMeAgent agent = (TrustMeAgent)agentList.get(i);
