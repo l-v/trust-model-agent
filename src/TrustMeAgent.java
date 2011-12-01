@@ -66,7 +66,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	private boolean connected;
 	private boolean useReputation = false; // whether reputation is used in the calculation of trust of not
 	private int reputation = 0; // reputation of the agent
-	private boolean opinionSharing = false; // agents may share options among them about each other
 	private boolean learning = false; // whether agent can learn and adjust it's behaviour or not
 	
 
@@ -133,15 +132,15 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	public void setReputation(int rep) { reputation = rep;}
 	public int getReputation() { return reputation;}
 	
+	public Map<Integer, Double> getAgentTrust() { return agentTrust;}
 	public void setAgentTrust(int index, double trust) {
 		agentTrust.put(index, trust);
 	}
 	
-	public void setBehaviourVariables(double pickyLevel, int cautionLevel, boolean useRep, boolean sharing, boolean learn) {
+	public void setBehaviourVariables(double pickyLevel, int cautionLevel, boolean useRep, boolean learn) {
 		picky = pickyLevel;
 		omega = Math.PI/(cautionLevel*1.0); // to make sure the division result is a double
 		useReputation = useRep;
-		opinionSharing = sharing;
 		learning = learn;
 	}
 	
@@ -423,6 +422,44 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		}
 		
 		return false;
+	}
+	
+	
+	/***
+	 * Takes opinion of the other agent into account
+	 * @param agent
+	 */
+	public void getOpinion(TrustMeAgent agent) {
+		
+		
+		double trustOnAgent = agentTrust.get(agent.getWho());
+		
+		// trust records of the other agent
+		Map<Integer,Double> trustInfo = agent.getAgentTrust();
+		
+		Set<Integer> agentIds = trustInfo.keySet();
+		Iterator<Integer> agentIdIt = agentIds.iterator();
+		
+		while (agentIdIt.hasNext()) {
+			int agentId = agentIdIt.next();
+			
+			// if agents have contacts in common, update trust info with foreign agent's opinon
+			if (agentTrust.containsKey(agentId)) {
+				
+				double originalTrust = agentTrust.get(agentId);
+				double foreignTrust = trustInfo.get(agentId);
+				
+				/*
+				 * foreignTrust can never weight more than 30% of total trust calculation, because direct experience is still more important
+				 * foreignTrust is also dependent on the trust deposited on the informer
+				 */
+				double opinionWeight = 0.30*trustOnAgent;
+				double newTrust = (1.0 - opinionWeight) * originalTrust + opinionWeight * foreignTrust;
+				
+				// updates trust 
+				agentTrust.put(agentId, newTrust);
+			}
+		}
 	}
 	
 	
