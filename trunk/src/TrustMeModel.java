@@ -1,18 +1,17 @@
-
+package TrustMe;
 
 
 import java.awt.Color;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Vector;
 
 import uchicago.src.reflector.ListPropertyDescriptor;
 import uchicago.src.sim.analysis.Histogram;
-import uchicago.src.sim.analysis.NetSequenceGraph;
 import uchicago.src.sim.analysis.OpenSequenceGraph;
-import uchicago.src.sim.analysis.PlotModel;
 import uchicago.src.sim.analysis.Sequence;
 import uchicago.src.sim.engine.BasicAction;
 import uchicago.src.sim.engine.Controller;
@@ -47,21 +46,23 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	private double mutationProbability = 1.0;
 	private double trustBreak = 0.4; // minimum level of trust that can be reached before a connection breaks
 	private int caution = 12; // how many steps does it take to gain the agents' full trust
-	private double pickyLevel = 0.4; // how picky/choosy the agents are when evaluating each other
+	private double pickyLevel = 0.4; // how picky/choosy the agents are when evaluating each other - the bigger the value the less picky they are
 	
 	private boolean multipleConnections = false; // if true, agent can connect to other 3 agents; if false, only pairs are allowed
 	
 	
-	public HashMap<Integer, Integer> agentsPaired = new HashMap<Integer, Integer>();
+	public Map<Integer, Double> agentsPaired = new HashMap<Integer, Double>();
 	
 	// Implementation variables
 	private String layoutType = "CircleLayout";
+	private Integer agentStalk = 0;
 	private DisplaySurface dsurf;
 	private Schedule schedule;
 	private AbstractGraphLayout graphLayout;
 	
 	// graphs
 	private OpenSequenceGraph graph;
+	private OpenSequenceGraph deterministicGraph;
 	
 	private BasicAction initialAction;
 	private Histogram degreeDist;
@@ -71,6 +72,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	private boolean showReputation = false;
 	private boolean useReputation = false;
 	
+	
+	private Hashtable<Integer, Double> connectionTrust = new Hashtable<Integer, Double>();
+	
+	
 	public TrustMeModel() {
 		Vector<String> vect = new Vector<String>();
 		vect.add("CircleLayout");
@@ -79,7 +84,16 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		vect.add("None");
 		ListPropertyDescriptor pd = new ListPropertyDescriptor("LayoutType", vect);
 		descriptors.put("LayoutType", pd);
+		
+		Vector<Integer> agentVect = new Vector<Integer>();
+		for(int i = 0; i != numAgents; i++) {
+			agentVect.add(i);
+		}
+		
+		ListPropertyDescriptor agent_pd = new ListPropertyDescriptor("Agent To Stalk", agentVect);
+		descriptors.put("Agent To Stalk", agent_pd);
 	}
+	
 	
 	public void setNumAgents (int n) { numAgents = n; }
 
@@ -141,6 +155,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 	public void setUseReputation(boolean useRep) { useReputation = useRep; }
 	
+	public int getAgentToStalk() { return agentStalk; }
+	
+	public void setAgentToStalk(int a) { agentStalk = a; }
+	
 	
 	
 	public void begin () {
@@ -151,8 +169,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	    
 	    if (showHist) 
 	    	degreeDist.display();
-	    if (showPlot) 
+	    if (showPlot) {
 	    	graph.display();
+	    	deterministicGraph.display();
+	    }
 	}
 
 	public void setup() {
@@ -164,10 +184,13 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			dsurf.dispose();
 		if (graph != null)
 			graph.dispose();
+		if(deterministicGraph != null)
+			deterministicGraph.display();
 		
 		dsurf = null;
 	    schedule = null;
 	    graph = null;
+	    deterministicGraph = null;
 	    degreeDist = null;
 
 	    System.gc ();
@@ -183,7 +206,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	
 	//TODO add picky and 'cautioness' from sinalpha formula
 	public String[] getInitParam () {
-	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "MaxDegree", "DegreeHist", "Plot", 
+	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "AgentToStalk", "MaxDegree", "DegreeHist", "Plot", 
 	    					"pickyLevel", "Caution", "TrustBreak", "MutationProb",
 	    					"showReputation", "useReputation"};
 	    return params;
@@ -315,8 +338,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		
 		if (showHist) 
 			degreeDist.step();
-	    if (showPlot) 
+	    if (showPlot) {
 	    	graph.step();
+	    	deterministicGraph.step();
+	    }
 	}
 	
 	public void mainAction() {
@@ -348,7 +373,8 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				
 				// edits connection color based on the level of trust
 				// maximum trust: black; high trust: red; medium trust: orange 
-				colorEdges(agent, trust);
+				connectionTrust(agent, trust);
+				colorEdges(agent);
 				
 				if(trust < trustBreak) { //TODO mudar isto (0.0 é só para os testes)
 					breakConnection(agent);
@@ -421,8 +447,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		
 		if (showHist) 
 			degreeDist.step();
-		if (showPlot) 
+		if (showPlot) {
 			graph.step();
+			deterministicGraph.step();
+		}
 	}
 
 	public void buildSchedule () {
@@ -455,6 +483,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		graph = new OpenSequenceGraph("Connections between Agents", this);
 		graph.setAxisTitles("time", "number of Connections");
 		graph.setYRange(0, numAgents/2);
+		
 		// plot number of the current connections
 		graph.addSequence("Number of connections", new Sequence() {
 			public double getSValue() {
@@ -462,20 +491,24 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			}
 		});
 		
-		graph.addSequence("Overall Trust", new Sequence() {
+		deterministicGraph = new OpenSequenceGraph("Trust of Agent " + agentStalk, this);
+		deterministicGraph.setAxisTitles("time", "trust");
+		deterministicGraph.setYRange(0, 12);
+		
+		deterministicGraph.addSequence("Connection Trust", new Sequence() {
 			public double getSValue() {
-				return averageTrust*10;
+				
+				Double d = 0.0;
+				if (connectionTrust.containsKey(agentStalk))
+					d=connectionTrust.get(agentStalk);
+					
+				return d*10;
 			}
 		});
 		
 
 		graph.display();
-
-		/*
-		graph = new NetSequenceGraph("Network Stats", this, "./net.txt", PlotModel.CSV, agentList);
-		graph.setAxisTitles("Time", "Statistic Value");
-		graph.setXRange(0, 50);
-		graph.setYRange(0, numAgents);*/
+		deterministicGraph.display();
 	}
 	
 	
@@ -535,12 +568,15 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				((Node)agent).addOutEdge (edge);
 				
 				
+				connectionTrust(agent, agent.getTrustIn(optionId));
+				
+				
 				int agentIndex = agent.getWho();
-				if (agentIndex==0 || agentIndex == 5 || agentIndex == 11) {
+				//if (agentIndex==0 || agentIndex == 5 || agentIndex == 11) {
 					System.out.println(agentIndex + " created edge to " + optionId);
 					System.out.println(agentIndex + " now connected to " + ((TrustMeAgent)agentList.get(agentIndex)).connectionId);
 					System.out.println(agentIndex + " best options are " + ((TrustMeAgent)agentList.get(agentIndex)).bestOptions.toString());
-				}
+				//}
 				
 				numConnects++;
 				
@@ -565,6 +601,13 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 	}
 	
+	public void connectionTrust(TrustMeAgent agent, double trust) {
+		double connectedAgentTrust = ((TrustMeAgent)agentList.get(agent.connectionId)).getTrustIn(agent.getWho());
+		double avgTrust = (trust + connectedAgentTrust)/2.0;
+		
+		connectionTrust.put(agent.getWho(), avgTrust);
+	}
+	
 	public void breakConnection(TrustMeAgent agent) {
 
 		agent.setConnected(false);
@@ -585,6 +628,16 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		
 		connectedAgent.setConnected(false);
 		
+		if(connectionTrust.containsKey(agent.getWho())) {
+			connectionTrust.put(agent.getWho(), 0.0);
+			connectionTrust.remove(agent.getWho());
+		}
+		else {
+			connectionTrust.put(agent.connectionId, 0.0);
+			connectionTrust.remove(agent.connectionId);
+		}
+		
+		
 		numConnects--;
 		
 		//TODO erase print junk in the grand finale
@@ -603,13 +656,17 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	 * @param agent
 	 * @param trust
 	 */
-	public void colorEdges(TrustMeAgent agent, double trust) {
+	public void colorEdges(TrustMeAgent agent) {
 		
 		Color edgeColor = Color.red;
 		Node agentNode = (Node)agent;
 		
-		double connectedAgentTrust = ((TrustMeAgent)agentList.get(agent.connectionId)).getTrustIn(agent.getWho());
-		double avgTrust = (trust + connectedAgentTrust)/2.0;
+		double avgTrust;
+		
+		if(connectionTrust.containsKey(agent.getWho()))
+			avgTrust = connectionTrust.get(agent.getWho());
+		else
+			avgTrust = connectionTrust.get(agent.connectionId);
 		
 		if (avgTrust > 0.9) {edgeColor = Color.red;}
 		else if (avgTrust > 0.7) { edgeColor = Color.orange;}
@@ -648,10 +705,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				rep += repScale(trust);
 			}
 			
-			System.out.println("Trust " + i + ": " + rep);
+			//System.out.println("Trust " + i + ": " + rep);
 			rep = rep/(numAgents-1);
-			System.out.println("Trust2 " + i + ": " + rep);
-			System.out.println("Rep " + i + ": " + Math.round(rep));
+			//System.out.println("Trust2 " + i + ": " + rep);
+			if(i==0) System.out.println("Rep " + i + ": " + Math.round(rep));
 			
 			int agentReputation = Math.round(rep);
 			TrustMeAgent agent = (TrustMeAgent)agentList.get(i);

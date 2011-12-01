@@ -1,3 +1,5 @@
+package TrustMe;
+
 
 
 import uchicago.src.sim.network.DefaultDrawableNode;
@@ -425,11 +427,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	
 
 	public boolean acceptRequest(TrustMeAgent agent) {
-		
-		if (who == 0 | agent.getWho() == 0)
-			System.out.println("agent.who = " + agent.getWho());
-		
-		
+
 		if (connected)
 			return false;
 		else if (bestOptions.contains(agent.getWho())) {
