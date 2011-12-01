@@ -1,4 +1,4 @@
-package TrustMe;
+
 
 
 import java.awt.Color;
@@ -71,6 +71,11 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	
 	private boolean showReputation = false;
 	private boolean useReputation = false;
+	
+	private boolean learning = false;
+	private int ticksToChange = 1500;
+	
+	private boolean opinionSharing = false; // agents share information amongst each other
 	
 	
 	private Hashtable<Integer, Double> connectionTrust = new Hashtable<Integer, Double>();
@@ -196,7 +201,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	    System.gc ();
 
 		dsurf = new DisplaySurface(this,"TrustMe");
-		//super.
+		
 		registerDisplaySurface("TrustMe",dsurf);
 		schedule = new Schedule();
 		agentList = new ArrayList(); //new ArrayList(numAgents);
@@ -204,7 +209,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		System.out.println("Running setup end");
 	}
 	
-	//TODO add picky and 'cautioness' from sinalpha formula
+	
 	public String[] getInitParam () {
 	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "AgentToStalk", "MaxDegree", "DegreeHist", "Plot", 
 	    					"pickyLevel", "Caution", "TrustBreak", "MutationProb",
@@ -233,7 +238,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			agent.setBorderColor (Color.black);
 			agent.setBorderWidth(2);
 			
-			agent.setBehaviourVariables(pickyLevel, caution, useReputation);
+			agent.setBehaviourVariables(pickyLevel, caution, useReputation, opinionSharing, learning);
 			
 			// adds the agent to agentList
 	    	agentList.add(agent);
@@ -286,22 +291,15 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	}
 	
 	public void initialAction() {
+		
 		// calculate trust for all agents
 		int numAgents = agentList.size();
 		for (int i = 0; i != numAgents; i++) {
-			/*
-			if (i!=0)
-				continue;
-*/
 			TrustMeAgent agent = (TrustMeAgent) agentList.get(i);
 
 			//complexidade n^2
 			for(int j = 0; j != numAgents; j++) {
-				//agent.overallTrust = sinalpha(agent);
-/*
-				if (j!=0 && j!=1)
-					continue;
-*/
+				
 				if (j!=i) {
 					double trust = agent.getTrust((TrustMeAgent) agentList.get(j));
 
@@ -313,23 +311,9 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 						// if this agent is a good choice, try to add it to the best options of the first
 						agent.evaluateOption(j);	
 					}
-					/*if (trust < 1 &&  i==0 && j==1)
-					System.out.println(trust);*/
 				}
 			}
 		}
-		
-		DecimalFormat myFormatter = new DecimalFormat("###.##");
-		System.out.println("\nTraits 0: " + ((TrustMeAgent) agentList.get(0)).printTraits());
-		//String output = myFormatter.format(((TrustMeAgent) agentList.get(0)).getTrustIn(1));
-		//System.out.println("Trust 0 in 1: " + output);
-
-		System.out.println("Trust 0 in 1: " + ((TrustMeAgent) agentList.get(0)).getTrustIn(1));
-		//System.out.println("\nTraits 1: " + ((TrustMeAgent) agentList.get(1)).printTraits());
-
-		//String output2 = myFormatter.format(((TrustMeAgent) agentList.get(1)).getTrustIn(0));
-		//System.out.println("Trust 1 in 0: " +  output2 + "\n------------");
-		//System.out.println("Trust 1 in 0: " + ((TrustMeAgent) agentList.get(1)).getTrustIn(0) + "\n------------");
 		
 		if(!layoutType.equals("None")) {
 			graphLayout.updateLayout();
@@ -352,17 +336,9 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		int numAgents = agentList.size();
 		for (int i = 0; i != numAgents; i++) {
 
-			/*if (i!=0)
-				continue;
-*/
 			TrustMeAgent agent = (TrustMeAgent) agentList.get(i);
-		
-			// cleans bestOptions list
-			//((TrustMeAgent)agentList.get(i)).purgeBestOptions();
-			
+
 			if (agent.getConnected()) {
-				
-				//check if connection must be broken
 				
 				double trust = agent.getTrust((TrustMeAgent) agentList.get(agent.connectionId));
 				agent.setAgentTrust(agent.connectionId, trust);
@@ -371,12 +347,12 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				if (i==0 || agent.connectionId==0) System.out.println("Debug: Trust of " + i + " in " + agent.connectionId + ": " + trust);
 				
 				
-				// edits connection color based on the level of trust
-				// maximum trust: black; high trust: red; medium trust: orange 
+				// updates edge information
 				connectionTrust(agent, trust);
 				colorEdges(agent);
 				
-				if(trust < trustBreak) { //TODO mudar isto (0.0 é só para os testes)
+				//check if connection must be broken
+				if(trust < trustBreak) { 
 					breakConnection(agent);
 					agent.evaluateOption(agent.connectionId);
 				}
@@ -390,9 +366,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			
 			//complexidade n^2
 			for(int j = 0; j != numAgents; j++) {
-				//agent.overallTrust = sinalpha(agent);
-
-
+				
 				if (agent.getConnected())
 					continue;
 				
@@ -404,11 +378,9 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 					// TODO: functionality disabled
 					// if agent is not too different, consider him an option
 					if (trust != -1) {
-						//agent.setAgentTrust(j, trust);
 						agent.setAgentTrust(j, trust);
 						
-						// if this agent is a good choice, try to add it to the best options of the first
-						//agent.evaluateOption(j);
+						// if this agent is a good choice, try to add it to the best options
 						agent.evaluateOption(j);
 					}
 					
@@ -463,7 +435,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		System.out.println("Running BuildSchedule end");
 	}
 
-	/*
+	/**
 	 * Creates a histogram of the degree distribution.
 	 */
 	private void makeHistogram() {
@@ -475,7 +447,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				"getOutDegree");
 	}
 
-	/*
+	/**
 	 * Creates a Plot of the Clustering Coefficient, the avg. density,
 	 * and the component count.
 	 */
@@ -512,6 +484,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	}
 	
 	
+	/**
+	 * Applies mutation to agent according to the mutation probability
+	 * @param agent
+	 */
 	public void mutate(TrustMeAgent agent) {
 		
 		double probMutate = agent.randInteger(100)+1;
@@ -557,8 +533,6 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 				// request was accepted, so create connection
 				System.out.println("CONNECTED---" + agent.getWho() + "-" + optionId + "----------------");
 
-				//((TrustMeAgent)agentList.get(agentIndex)).setConnected(true);
-				//((TrustMeAgent)agentList.get(agentIndex)).connectionId = optionId;
 				agent.setConnected(true);
 				agent.connectionId = optionId;
 				
@@ -601,6 +575,11 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 	}
 	
+	/**
+	 * Gets connection trust; Based on the average trust between the two agents connected
+	 * @param agent
+	 * @param trust
+	 */
 	public void connectionTrust(TrustMeAgent agent, double trust) {
 		double connectedAgentTrust = ((TrustMeAgent)agentList.get(agent.connectionId)).getTrustIn(agent.getWho());
 		double avgTrust = (trust + connectedAgentTrust)/2.0;
@@ -608,6 +587,11 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 		connectionTrust.put(agent.getWho(), avgTrust);
 	}
 	
+	
+	/**
+	 * Breaks an agent's connection
+	 * @param agent
+	 */
 	public void breakConnection(TrustMeAgent agent) {
 
 		agent.setConnected(false);
@@ -737,6 +721,12 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			return -1;
 	}
 	
+	/***
+	 * Return the color corresponding to the reputation value
+	 * High rep = white; medium = green; low = pink 
+	 * @param repValue
+	 * @return
+	 */
 	public Color repColorCode(int repValue) {
 		
 		switch (repValue) {

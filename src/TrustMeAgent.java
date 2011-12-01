@@ -1,13 +1,9 @@
-package TrustMe;
+
 
 
 
 import uchicago.src.sim.network.DefaultDrawableNode;
-//import uchicago.src.sim.gui.Drawable;
-import uchicago.src.sim.gui.NetworkDrawable;
 import uchicago.src.sim.gui.OvalNetworkItem;
-import uchicago.src.sim.gui.SimGraphics;
-import java.awt.*;
 import java.util.*;
 
 public class TrustMeAgent extends DefaultDrawableNode {
@@ -45,7 +41,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		private double responsible = 0.5;
 	 */
 	
-	//private enum attributesIndex { NEAT, OUTGOING, NICE, ACTIVE, RESPONSIBLE }
+	
 	private LinkedList<String> allAttributes;
 	private LinkedList<String> keyAttributes; //NEAT, OUTGOING, NICE, ACTIVE, RESPONSIBLE 
 	
@@ -53,29 +49,27 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	private double minimumTrust = 0.6; // confiança mínima necessária
 	private int maxOptions = 3; // numero maximo de agentes com quem tentar conexão
 	private double diffQuotient = 0.6; // diferença máxima aceite
-	private double picky = 0.2; //intervalo de avalia��o de agentes [-picky, picky]
+	private double picky = 0.2; //intervalo de avaliação de agentes [-picky, picky]
 	//neat_agente1 = 0.5 & neat_agente2 = 0.4
 	//0.5 - 0.4 = 0.1 <-- picky as 0.2 accepts!
 	
 	// record of trust placed on other agents
-	// make list of all other agents with respective trust?
-	// confusing, save for later on... 
-	// Map<agentID (on model), trustPlaced>
-	Map<Integer, Double> agentTrust;
+	Map<Integer, Double> agentTrust; // Map<agentID (on model), trustPlaced>
 	
 	Map<Integer, Double> agentAlpha; // Map<agentIndex, agentAlpha>
 	
 	
 	LinkedList<Integer> bestOptions = new LinkedList<Integer>();
+
 	// agentID to whom this one is connected (should it be placed here at all??) 
 	int connectionId = -1;
 	private boolean connected;
 	private boolean useReputation = false; // whether reputation is used in the calculation of trust of not
 	private int reputation = 0; // reputation of the agent
+	private boolean opinionSharing = false; // agents may share options among them about each other
+	private boolean learning = false; // whether agent can learn and adjust it's behaviour or not
 	
-	// overall trust based on the default values
-	//double overallTrust = 0.0;
-	//double alpha = -1;
+
 	
 	///////////////////////NODE
 	public TrustMeAgent(double spaceSizeX, double spaceSizeY/*, NetworkDrawable drawable*/, int who, int xpos, int ypos) {
@@ -118,24 +112,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			int attribute = rand.nextInt(5);
 			
 			addListAttribute(allAttributes.get(attribute), keyAttributes);
-			/*
-			switch(attribute) {
-			case 0:
-				addListAttribute("neat");
-				break;
-			case 1:
-				addListAttribute("outgoing");
-				break;
-			case 2:
-				addListAttribute("nice");
-				break;
-			case 3:
-				addListAttribute("active");
-				break;
-			case 4:
-				addListAttribute("responsible");
-				break;
-			}*/
 		}
 	}
 	
@@ -161,10 +137,12 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		agentTrust.put(index, trust);
 	}
 	
-	public void setBehaviourVariables(double pickyLevel, int cautionLevel, boolean useRep) {
+	public void setBehaviourVariables(double pickyLevel, int cautionLevel, boolean useRep, boolean sharing, boolean learn) {
 		picky = pickyLevel;
 		omega = Math.PI/(cautionLevel*1.0); // to make sure the division result is a double
 		useReputation = useRep;
+		opinionSharing = sharing;
+		learning = learn;
 	}
 	
 	public double randVal() {
@@ -226,7 +204,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		double comp = attrValue1 - attrValue2;
 
 		// aceite se attrb do agente 2 foi maior que o de 1, 
-		//ou se diferen�a n�o for maior que picky
+		//ou se diferença não for maior que picky
 		if (Math.abs(comp) <= picky || attrValue1 < attrValue2)
 			return true;
 		
@@ -338,13 +316,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			else
 				agentAlpha.put(index, newAlpha);
 		}
-		
-		if (who==-1) {
-			System.out.println("alpha0: " + alpha0);
-			System.out.println("alpha: " + agentAlpha.get(index));
-			System.out.println("alpha1: " + alpha1);
-		}
-
 				
 		double trust = delta * Math.sin(agentAlpha.get(index)) + delta;
 		return trust;
@@ -430,6 +401,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 
 		if (connected)
 			return false;
+		
 		else if (bestOptions.contains(agent.getWho())) {
 			
 			// still not sure where connections will be made, therefore
@@ -441,7 +413,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		}
 		
 		//TODO: can any other agents be accepted? 
-		// insert minimum trust level here (if we're still doing that)
+		// minimim level of trust required
 		else if (agentTrust.get(agent.getWho()) >= 0.7) {
 			
 			connectionId = agent.getWho();
