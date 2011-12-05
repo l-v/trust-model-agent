@@ -230,8 +230,8 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 	    for (int i = 0; i != numAgents; i++) {
 	    	
 	    	// create the Oval nodes.
-	    	int x = Random.uniform.nextIntFromTo (0, spaceSizeX - 5);
-	    	int y = Random.uniform.nextIntFromTo (0, spaceSizeY - 5);
+	    	int x = Random.uniform.nextIntFromTo (0, spaceSizeX - 10);
+	    	int y = Random.uniform.nextIntFromTo (0, spaceSizeY - 10);
 	    	
 	    	// cria o agente
 	    	TrustMeAgent agent = new TrustMeAgent(spaceSizeX, spaceSizeY, i, x, y);
@@ -241,7 +241,7 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 			agent.setBorderColor (Color.black);
 			agent.setBorderWidth(2);
 			
-			agent.setBehaviourVariables(pickyLevel, caution, useReputation, learning);
+			agent.setBehaviourVariables(pickyLevel, caution, useReputation);
 			
 			// adds the agent to agentList
 	    	agentList.add(agent);
@@ -399,6 +399,10 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 
 			// tries to get a connection
 			tryConnection(agent);
+			
+			// learning
+			if (agent.getConnected() && learning)
+				agent.learn();
 
 			mutate(agent);
 			overallTrust += agent.getAverageTrust();	
@@ -562,6 +566,9 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 					System.out.println(agentIndex + " best options are " + ((TrustMeAgent)agentList.get(agentIndex)).bestOptions.toString());
 				//}
 				
+				agent.incNumConnections();
+				((TrustMeAgent)agentList.get(optionId)).incNumConnections();
+					
 				numConnects++;
 				
 				
@@ -575,6 +582,11 @@ public class TrustMeModel extends SimModelImpl/*SimpleModel*/ {
 					return;
 				}
 				break;
+			}
+			
+			// request was denied
+			else {
+				agent.incDeniedByOthers();
 			}
 		}
 		
