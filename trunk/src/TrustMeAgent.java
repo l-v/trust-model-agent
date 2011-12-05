@@ -64,9 +64,12 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	// agentID to whom this one is connected (should it be placed here at all??) 
 	int connectionId = -1;
 	private boolean connected;
+	private int numConnections = 0; // connections established
+	private int numDeniedByOthers = 0; // requests denied by others
+	private int numDeniedBySelf = 0; // requests denied by this agent to others
+	
 	private boolean useReputation = false; // whether reputation is used in the calculation of trust of not
 	private int reputation = 0; // reputation of the agent
-	private boolean learning = false; // whether agent can learn and adjust it's behaviour or not
 	
 
 	
@@ -132,16 +135,23 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	public void setReputation(int rep) { reputation = rep;}
 	public int getReputation() { return reputation;}
 	
+	public void incNumConnections() {
+		numConnections++;
+	}
+	
+	public void incDeniedByOthers() {
+		numDeniedByOthers++;
+	}
+	
 	public Map<Integer, Double> getAgentTrust() { return agentTrust;}
 	public void setAgentTrust(int index, double trust) {
 		agentTrust.put(index, trust);
 	}
 	
-	public void setBehaviourVariables(double pickyLevel, int cautionLevel, boolean useRep, boolean learn) {
+	public void setBehaviourVariables(double pickyLevel, int cautionLevel, boolean useRep) {
 		picky = pickyLevel;
 		omega = Math.PI/(cautionLevel*1.0); // to make sure the division result is a double
 		useReputation = useRep;
-		learning = learn;
 	}
 	
 	public double randVal() {
@@ -421,6 +431,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			return true;
 		}
 		
+		numDeniedBySelf++;
 		return false;
 	}
 	
@@ -460,6 +471,16 @@ public class TrustMeAgent extends DefaultDrawableNode {
 				agentTrust.put(agentId, newTrust);
 			}
 		}
+	}
+	
+	/**
+	 * Learning function
+	 * agent either adapts by conforming to society or becoming less demanding in connections
+	 */
+	public void learn() {
+		
+		
+		
 	}
 	
 	
