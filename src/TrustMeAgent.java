@@ -1,6 +1,4 @@
-
-
-
+package TrustMe;
 
 import uchicago.src.sim.network.DefaultDrawableNode;
 import uchicago.src.sim.gui.OvalNetworkItem;
@@ -48,8 +46,8 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	
 	private double minimumTrust = 0.6; // confiança mínima necessária
 	private int maxOptions = 3; // numero maximo de agentes com quem tentar conexão
-	private double diffQuotient = 0.6; // diferença máxima aceite
-	private double picky = 0.2; //intervalo de avaliação de agentes [-picky, picky]
+	private double diffQuotient = 0.6; // diferenca maxima aceite
+	private double picky; //intervalo de avaliação de agentes [-picky, picky]
 	//neat_agente1 = 0.5 & neat_agente2 = 0.4
 	//0.5 - 0.4 = 0.1 <-- picky as 0.2 accepts!
 	
@@ -74,7 +72,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 
 	
 	///////////////////////NODE
-	public TrustMeAgent(double spaceSizeX, double spaceSizeY/*, NetworkDrawable drawable*/, int who, int xpos, int ypos) {
+	public TrustMeAgent(double spaceSizeX, double spaceSizeY, int who, int xpos, int ypos) {
 	    //super(drawable);
 	    this.spaceSizeX = spaceSizeX;
 	    this.spaceSizeY = spaceSizeY;
@@ -108,7 +106,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		keyAttributes = new LinkedList<String>();
 		
-		//attribute rn_attributes to tha list
+		//attribute rn_attributes to the list
 		while (keyAttributes.size() != rn_attributes) {
 			
 			int attribute = rand.nextInt(5);
@@ -134,6 +132,29 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	
 	public void setReputation(int rep) { reputation = rep;}
 	public int getReputation() { return reputation;}
+	
+	public void setAttr(double neat, double outgoing, double nice, double active, double responsible) {
+		traits.put("neat",neat);
+		traits.put("outgoing", outgoing);
+		traits.put("nice", nice);
+		traits.put("active", active);
+		traits.put("responsible", responsible);
+	}
+	
+	public void setPrefs(boolean neat, boolean outgoing, boolean nice, boolean active, boolean responsible) {
+		keyAttributes.clear();
+		
+		if(neat)
+			keyAttributes.add("neat");
+		if(outgoing)
+			keyAttributes.add("outgoing");
+		if(nice)
+			keyAttributes.add("nice");
+		if(active)
+			keyAttributes.add("active");
+		if(responsible)
+			keyAttributes.add("responsible");
+	}
 	
 	public void incNumConnections() {
 		numConnections++;
@@ -212,8 +233,8 @@ public class TrustMeAgent extends DefaultDrawableNode {
 
 		double comp = attrValue1 - attrValue2;
 
-		// aceite se attrb do agente 2 foi maior que o de 1, 
-		//ou se diferença não for maior que picky
+		// accepted if the attribute of agent 2 is bigger than the one of agent 1 
+		//or if the difference isn't bigger than the picky value
 		if (Math.abs(comp) <= picky || attrValue1 < attrValue2)
 			return true;
 		
@@ -225,19 +246,9 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		Random rand = new Random();
 		
 		// number of attributes to be mutates
-		int rn_attributes = rand.nextInt(2);
+		int rn_attributes = rand.nextInt(2); 
 		
-		LinkedList<String> mutateAttr = new LinkedList<String>(); 
-		
-		
-		/* old way
-		while (mutateAttr.size() != rn_attributes) {
-
-			int attribute = rand.nextInt(5);
-			addListAttribute(allAttributes.get(attribute), mutateAttr);
-		}*/
-
-		for (int i=0; i!=rn_attributes; i++) {
+		for (int i = 0; i != rn_attributes; i++) {
 
 			// chooses random attribute to modify
 			int attr = rand.nextInt(5);
@@ -245,13 +256,17 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			// mutates the attribute by adding the values -1, 0, or 1
 			double attrModifier = (rand.nextInt(3)/10.0) - 1;
 			double newAttr = traits.get(allAttributes.get(attr)) + attrModifier;
+			
+			//if the random value makes the attribute negative
+			newAttr = Math.abs(newAttr);
+			
+			//if the random value makes the attribute higher than the maximum range
+			if(newAttr > 1.0) {
+				newAttr = 1.0;
+			}
 	
 			// makes change to agent
 			traits.put(allAttributes.get(attr), newAttr);
-			
-			// old way
-			//traits.put(mutateAttr.get(i),randVal());
-			//traits.put(mutateAttr.get(i), arg1)
 		}
 	}
 	
@@ -273,13 +288,9 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			
 			String trait = allAttributes.get(i);
 			
-			// checks if agents are too different
-			/*if (Math.abs(traits.get(trait) - agent.traits.get(trait)) > diffQuotient)
-				return -1;
-			*/
-			
+	
 			// checks if it fulfills key attributes
-			/*else*/ if (keyAttributes.contains(trait)) {
+			if (keyAttributes.contains(trait)) {
 				
 				if (pickyRange(agent, trait)) 
 					posTraits++;
@@ -302,7 +313,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
-		if (who==-1) System.out.println("lambda: " + lambda);
+		if (who==0) System.out.println("lambda: " + lambda);
 
 		// if alpha wasn't initialized yet
 		if(!agentAlpha.containsKey(index)) {
@@ -327,6 +338,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		}
 				
 		double trust = delta * Math.sin(agentAlpha.get(index)) + delta;
+		System.out.println("who? " + who + ", trust: " + trust);
 		return trust;
 	}
 	
@@ -337,14 +349,12 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	 * @param agentId - 'external agent' to be evaluated
 	 */
 	public void evaluateOption(int agentId) {
-		
-		int numOptions = bestOptions.size();
 		double newTrustVal = agentTrust.get(agentId);		
 		
 		if (agentTrust.size()==0) {
 			System.out.println("WARNING: " + who + " has no records!");
 		}
-		
+		/*
 		//TODO erase all this junk of prints
 		if (false && (who==0 || who == 3)) {
 			String bestOptionsTrust = "";
@@ -362,7 +372,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 				System.out.println("trust in " + bestOptions.get(1) + "=" + agentTrust.get(bestOptions.get(1)));
 				System.out.println("trust in " + bestOptions.get(2) + "=" + agentTrust.get(bestOptions.get(2)));
 			}
-		}
+		}*/
 			
 		
 		// if agent already on bestOptions, remove it and update the list 
@@ -421,7 +431,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			return true;
 		}
 		
-		//TODO: can any other agents be accepted? 
 		// minimim level of trust required
 		else if (agentTrust.get(agent.getWho()) >= 0.7) {
 			
@@ -441,7 +450,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	 * @param agent
 	 */
 	public void getOpinion(TrustMeAgent agent) {
-		
 		
 		double trustOnAgent = agentTrust.get(agent.getWho());
 		
@@ -472,16 +480,5 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			}
 		}
 	}
-	
-	/**
-	 * Learning function
-	 * agent either adapts by conforming to society or becoming less demanding in connections
-	 */
-	public void learn() {
-		
-		
-		
-	}
-	
 	
 }
