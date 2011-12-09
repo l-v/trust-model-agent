@@ -1,4 +1,4 @@
-package TrustMe;
+
 
 import uchicago.src.sim.network.DefaultDrawableNode;
 import uchicago.src.sim.gui.OvalNetworkItem;

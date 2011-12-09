@@ -1,4 +1,3 @@
-package TrustMe;
 
 import java.awt.Color;
 import java.text.DecimalFormat;
@@ -29,8 +28,8 @@ public class TrustMeModel extends SimModelImpl {
 	
 	//DEBUG && TESTING
 	private boolean debug = true;	
-	private boolean useTestAgents = true;
-	private int testCase = 2; 
+	private boolean useTestAgents = false;
+	private int testCase = 1; 
 	
 	// Model variables
 	private int updateEveryN = 5;
@@ -175,7 +174,9 @@ public class TrustMeModel extends SimModelImpl {
 	    	graph.display();
 	    	deterministicGraph.display();
 	    	sinalphaGraph.display();
-	    	deterministicGraphTest.display();
+	    	
+	    	if (useTestAgents)
+	    		deterministicGraphTest.display();
 	    }
 	}
 
@@ -192,7 +193,7 @@ public class TrustMeModel extends SimModelImpl {
 			deterministicGraph.dispose();
 		if(sinalphaGraph != null)
 			sinalphaGraph.dispose();
-		if(deterministicGraphTest != null)
+		if(useTestAgents && deterministicGraphTest != null)
 			deterministicGraphTest.dispose();
 		
 		dsurf = null;
@@ -200,7 +201,8 @@ public class TrustMeModel extends SimModelImpl {
 	    graph = null;
 	    deterministicGraph = null;
 	    sinalphaGraph = null;
-	    deterministicGraphTest = null;
+	    if (useTestAgents)
+	    	deterministicGraphTest = null;
 
 	    System.gc ();
 
@@ -351,7 +353,9 @@ public class TrustMeModel extends SimModelImpl {
 	    	graph.step();
 	    	deterministicGraph.step();
 	    	sinalphaGraph.step();
-	    	deterministicGraphTest.step();
+	    	
+	    	if (useTestAgents)
+	    		deterministicGraphTest.step();
 	    }
 	}
 	
@@ -456,7 +460,9 @@ public class TrustMeModel extends SimModelImpl {
 			graph.step();
 			deterministicGraph.step();
 			sinalphaGraph.step();
-			deterministicGraphTest.step();
+			
+			if (useTestAgents)
+				deterministicGraphTest.step();
 		}
 	}
 
@@ -548,7 +554,9 @@ public class TrustMeModel extends SimModelImpl {
 		graph.display();
 		deterministicGraph.display();
 		sinalphaGraph.display();
-		deterministicGraphTest.display();
+		
+		if (useTestAgents)
+			deterministicGraphTest.display();
 	}
 	
 	
