@@ -49,8 +49,6 @@ public class TrustMeModel extends SimModelImpl {
 	private int caution = 12; // how many steps does it take to gain the agents' full trust
 	private double pickyLevel = 0.4; // how picky/choosy the agents are when evaluating each other - the bigger the value the less picky they are
 	
-	private boolean multipleConnections = false; // if true, agent can connect to other 3 agents; if false, only pairs are allowed
-	
 	
 	public Map<Integer, Double> agentsPaired = new HashMap<Integer, Double>();
 	
@@ -359,8 +357,6 @@ public class TrustMeModel extends SimModelImpl {
 	}
 	
 	public void mainAction() {
-		
-		double overallTrust = 0.0;
 		
 		// calculate trust for all agents
 		int numAgents = agentList.size();
