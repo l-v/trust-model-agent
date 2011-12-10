@@ -6,7 +6,6 @@ import java.util.*;
 
 public class TrustMeAgent extends DefaultDrawableNode {
 	private int who;
-	private int group;
 	
 	//////Node stuff
 	private double spaceSizeX, spaceSizeY;
@@ -46,7 +45,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	
 	private double minimumTrust = 0.6; // confiança mínima necessária
 	private int maxOptions = 3; // numero maximo de agentes com quem tentar conexão
-	private double diffQuotient = 0.6; // diferenca maxima aceite
 	private double picky; //intervalo de avaliação de agentes [-picky, picky]
 	//neat_agente1 = 0.5 & neat_agente2 = 0.4
 	//0.5 - 0.4 = 0.1 <-- picky as 0.2 accepts!
@@ -81,7 +79,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
     	setDrawable(drawable);
 	    
 	    this.who = who;
-		this.group = who;
 		connected = false;
 		
 		agentTrust = new HashMap<Integer, Double>();
@@ -126,9 +123,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	public boolean getConnected() { return connected; }
 	public void setConnected(boolean c) { connected = c; }
 	public int getWho(){ return who; }
-
-	public void setGroup(int group) { this.group = group; }
-	public int getGroup() { return group; }
 	
 	public void setReputation(int rep) { reputation = rep;}
 	public int getReputation() { return reputation;}
@@ -169,22 +163,38 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		agentTrust.put(index, trust);
 	}
 	
+	/**
+	 * Set variables related to the agent's behaviour
+	 */
 	public void setBehaviourVariables(double pickyLevel, int cautionLevel, boolean useRep) {
 		picky = pickyLevel;
 		omega = Math.PI/(cautionLevel*1.0); // to make sure the division result is a double
 		useReputation = useRep;
 	}
 	
+	/**
+	 * Generates random value between 0.0 and 1.0
+	 * @return
+	 */
 	public double randVal() {
 		Random rand = new Random();
 		return rand.nextInt(11)/10.0;
 	}
 	
+	/**
+	 * Generates random value between 0 and upLimit
+	 * @param upLimit
+	 * @return
+	 */
 	public double randInteger(int upLimit) {
 		Random rand = new Random();
 		return rand.nextInt(upLimit);
 	}
 	
+	/**
+	 * Print agent traits
+	 * @return
+	 */
 	public String printTraits() {
 		String agent = "";
 		
@@ -197,36 +207,23 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		return agent;
 	}
 	
+	
+	/**
+	 * Get trust value assigned to agent with id 'index'
+	 * @param index
+	 * @return
+	 */
 	public Double getTrustIn(int index) {
 		return agentTrust.get(index);
 	}
 	
 	
-	/***
-	 * Gets average trust placed on other agents
+	/** 
+	 * Check if attribute chosen to evaluate are within the chosen picky range
+	 * @param agent
+	 * @param attribute
 	 * @return
 	 */
-	public Double getAverageTrust() {
-		
-		int numRecords = agentTrust.size();
-		
-		if (numRecords == 0) 
-			return -1.0;
-
-		
-		double trustSum = 0.0;
-
-		Collection<Double> trustValues = agentTrust.values();
-		Iterator<Double> trustIt = trustValues.iterator();
-
-		while (trustIt.hasNext()) {
-			trustSum += trustIt.next();
-		}
-
-		return trustSum/numRecords;
-	}
-	
-	//check if number of attributes chosen to evaluate are within the chosen picky range
 	public boolean pickyRange(TrustMeAgent agent, String attribute) {
 		double attrValue1 = traits.get(attribute);
 		double attrValue2 = agent.traits.get(attribute);
@@ -241,6 +238,9 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		return false;
 	}
 	
+	/**
+	 * Apply random mutation to this agent
+	 */
 	public void mutate() {
 		
 		Random rand = new Random();
@@ -270,6 +270,11 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		}
 	}
 	
+	/**
+	 * Calculate trust in agent
+	 * @param agent
+	 * @return
+	 */
 	public double getTrust(TrustMeAgent agent) {
 		
 		// trust = delta * sin(alpha) + delta
@@ -411,11 +416,19 @@ public class TrustMeAgent extends DefaultDrawableNode {
 
 	}
 	
+	/**
+	 * Clear bestOptions list
+	 */
 	public void purgeBestOptions() {
 		bestOptions.clear();
 	}
 	
 
+	/**
+	 * Reply to connection request from agent
+	 * @param agent
+	 * @return
+	 */
 	public boolean acceptRequest(TrustMeAgent agent) {
 
 		if (connected)

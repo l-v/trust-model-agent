@@ -43,7 +43,6 @@ public class TrustMeModel extends SimModelImpl {
 	
 	private double numConnects = 0;
 	private double numMutations = 0;
-	private double averageTrust = 0.0; // average trust in the system
 	
 	private double mutationProbability = 1.0;
 	private double trustBreak = 0.4; // minimum level of trust that can be reached before a connection breaks
@@ -427,12 +426,8 @@ public class TrustMeModel extends SimModelImpl {
 			// tries to get a connection
 			tryConnection(agent);
 
-			mutate(agent);
-			overallTrust += agent.getAverageTrust();	
+			mutate(agent);	
 		}
-		
-		// add to overallTrust calculation
-		averageTrust = overallTrust/numAgents;
 		
 		if (showReputation || useReputation)
 			calcReputation();
@@ -594,7 +589,10 @@ public class TrustMeModel extends SimModelImpl {
 		}
 	}
 
-	
+	/**
+	 * Try to connect agent to it's best options
+	 * @param agent
+	 */
 	public void tryConnection(TrustMeAgent agent) {
 		
 		for (int b=0; b!=agent.bestOptions.size(); b++) {
