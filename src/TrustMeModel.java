@@ -39,7 +39,6 @@ public class TrustMeModel extends SimModelImpl {
 	private int spaceSizeY = 400;
 	private int numAgents = 2;
 	private ArrayList agentList = new ArrayList(numAgents);
-	private int maxDegree = 5;
 	
 	private double numConnects = 0;
 	
@@ -122,10 +121,6 @@ public class TrustMeModel extends SimModelImpl {
 	public boolean getPlot() { return showPlot; }
 
 	public void setPlot(boolean val) { showPlot = val; }
-	
-	public int getMaxDegree() { return maxDegree; }
-
-	public void setMaxDegree(int degree) { maxDegree = degree; }
 	
 	public double getTrustBreak() { return trustBreak; }
 
@@ -213,7 +208,7 @@ public class TrustMeModel extends SimModelImpl {
 	
 	
 	public String[] getInitParam () {
-	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "AgentToStalk", "MaxDegree", "Plot", 
+	    String[] params = {"numAgents", "spaceSizeX", "spaceSizeY", "updateEveryN", "LayoutType", "AgentToStalk", "Plot", 
 	    					"pickyLevel", "Caution", "TrustBreak", "MutationProb",
 	    					"showReputation", "useReputation", "opinionSharing"};
 	    return params;
@@ -497,6 +492,8 @@ public class TrustMeModel extends SimModelImpl {
 		});
 		
 		if(useTestAgents) {
+			//TODO erase or keep??
+			useTestAgents = false; //TODO: erase this temporary line
 			deterministicGraphTest = new OpenSequenceGraph("Trust of Agent " + 1, this);
 			deterministicGraphTest.setAxisTitles("time", "trust");
 			deterministicGraphTest.setYRange(0, 12);
