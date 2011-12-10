@@ -51,7 +51,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	
 	// record of trust placed on other agents
 	Map<Integer, Double> agentTrust; // Map<agentID (on model), trustPlaced>
-	
 	Map<Integer, Double> agentAlpha; // Map<agentIndex, agentAlpha>
 	
 	
@@ -60,10 +59,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	// agentID to whom this one is connected (should it be placed here at all??) 
 	int connectionId = -1;
 	private boolean connected;
-	private int numConnections = 0; // connections established
-	private int numDeniedByOthers = 0; // requests denied by others
-	private int numDeniedBySelf = 0; // requests denied by this agent to others
-	
+
 	private boolean useReputation = false; // whether reputation is used in the calculation of trust of not
 	private int reputation = 0; // reputation of the agent
 	
@@ -150,15 +146,13 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			keyAttributes.add("responsible");
 	}
 	
-	public void incNumConnections() {
-		numConnections++;
-	}
-	
-	public void incDeniedByOthers() {
-		numDeniedByOthers++;
-	}
-	
 	public Map<Integer, Double> getAgentTrust() { return agentTrust;}
+	
+	/**
+	 * Saves trust value of agent index to agentTrust
+	 * @param index
+	 * @param trust
+	 */
 	public void setAgentTrust(int index, double trust) {
 		agentTrust.put(index, trust);
 	}
@@ -453,7 +447,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			return true;
 		}
 		
-		numDeniedBySelf++;
 		return false;
 	}
 	
@@ -492,6 +485,5 @@ public class TrustMeAgent extends DefaultDrawableNode {
 				agentTrust.put(agentId, newTrust);
 			}
 		}
-	}
-	
+	}	
 }

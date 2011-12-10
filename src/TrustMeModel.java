@@ -42,7 +42,6 @@ public class TrustMeModel extends SimModelImpl {
 	private int maxDegree = 5;
 	
 	private double numConnects = 0;
-	private double numMutations = 0;
 	
 	private double mutationProbability = 1.0;
 	private double trustBreak = 0.4; // minimum level of trust that can be reached before a connection breaks
@@ -580,8 +579,6 @@ public class TrustMeModel extends SimModelImpl {
 					agent.setBorderWidth(agent.getBorderWidth()-1);
 				}
 			}
-			
-			numMutations++;
 		}
 	}
 
@@ -621,9 +618,6 @@ public class TrustMeModel extends SimModelImpl {
 					System.out.println(agentIndex + " now connected to " + ((TrustMeAgent)agentList.get(agentIndex)).connectionId);
 					System.out.println(agentIndex + " best options are " + ((TrustMeAgent)agentList.get(agentIndex)).bestOptions.toString());
 				}
-				
-				agent.incNumConnections();
-				((TrustMeAgent)agentList.get(optionId)).incNumConnections();
 					
 				numConnects++;
 				
@@ -639,11 +633,6 @@ public class TrustMeModel extends SimModelImpl {
 					}
 				}
 				break;
-			}
-			
-			// request was denied
-			else {
-				agent.incDeniedByOthers();
 			}
 		}
 		
