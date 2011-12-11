@@ -223,12 +223,13 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		double attrValue2 = agent.traits.get(attribute);
 
 		double comp = attrValue1 - attrValue2;
-
+		
 		// accepted if the attribute of agent 2 is bigger than the one of agent 1 
 		//or if the difference isn't bigger than the picky value
-		if (Math.abs(comp) <= picky || attrValue1 < attrValue2)
+		if (Math.abs(comp) <= picky || attrValue1 < attrValue2) {
 			return true;
-		
+		}
+
 		return false;
 	}
 	
@@ -312,7 +313,9 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
-		if (who==0) System.out.println("lambda: " + lambda);
+		if (who==0) {System.out.println("lambda 0 : " + lambda);}
+		if (who==1) {System.out.println("lambda 1 : " + lambda);}
+		if (who==2) {System.out.println("lambda 2 : " + lambda);}
 
 		// if alpha wasn't initialized yet
 		if(!agentAlpha.containsKey(index)) {
@@ -337,7 +340,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		}
 				
 		double trust = delta * Math.sin(agentAlpha.get(index)) + delta;
-		System.out.println("who? " + who + ", trust: " + trust);
+		System.out.println("agent " + who + ", trust in " + agent.getWho() + ": " + trust);
 		return trust;
 	}
 	
@@ -459,6 +462,8 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		double trustOnAgent = agentTrust.get(agent.getWho());
 		
+		System.out.println(who + " getting opinion from " + agent.getWho());
+		
 		// trust records of the other agent
 		Map<Integer,Double> trustInfo = agent.getAgentTrust();
 		
@@ -480,6 +485,10 @@ public class TrustMeAgent extends DefaultDrawableNode {
 				 */
 				double opinionWeight = 0.30*trustOnAgent;
 				double newTrust = (1.0 - opinionWeight) * originalTrust + opinionWeight * foreignTrust;
+				
+				if (agentId==2) //only print for agent 3 (for testing)
+					System.out.println("opinionWeight: " + opinionWeight + "; newTrust: " + newTrust);
+				
 				
 				// updates trust 
 				agentTrust.put(agentId, newTrust);

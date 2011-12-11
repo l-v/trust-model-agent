@@ -28,8 +28,8 @@ public class TrustMeModel extends SimModelImpl {
 	
 	//DEBUG && TESTING
 	private boolean debug = true;	
-	private boolean useTestAgents = false;
-	private int testCase = 1; 
+	private boolean useTestAgents = true;
+	private int testCase = 3; 
 	
 	// Model variables
 	private int updateEveryN = 5;
@@ -156,6 +156,7 @@ public class TrustMeModel extends SimModelImpl {
 	
 	
 	public void begin () {
+		
 	    buildModel ();
 	    buildDisplay ();
 	    buildSchedule ();
@@ -220,7 +221,14 @@ public class TrustMeModel extends SimModelImpl {
 
 	public void buildModel() {	    
 		System.out.println("Running BuildModel begginning");
-	    // add agents with random values
+		
+		if (useTestAgents)
+			mutationProbability = 0.0;
+		
+		if (useTestAgents && testCase == 3 && numAgents < 3)
+			numAgents = 3;
+		
+	    // add agents with random values		
 	    for (int i = 0; i != numAgents; i++) {
 	    	
 	    	// create the Oval nodes.
@@ -243,23 +251,35 @@ public class TrustMeModel extends SimModelImpl {
 				if(i==0) {
 					agent.setAttr(0.0,0.7,0.5,0.6,0.1);
 					
+					if (testCase == 3)
+						agent.setAttr(0.8,0.8,0.8,0.8,0.8);
+
+					
 					if (testCase==1){ 
 						agent.setPrefs(false, true, true, true, false);
 					}
-					else if(testCase == 2) {
+					else if(testCase == 2 || testCase == 3) {
 						agent.setPrefs(true, false, true, false, true);
 					}
 				}
 
 				if(i==1) {
 					agent.setAttr(0.9,0.3,0.5,0.6,0.9);
+		
+					if (testCase==3)
+						agent.setAttr(0.5,0.5,0.5,0.5,0.5);
+
 					
 					if (testCase==1){ 
 						agent.setPrefs(false, true, true, true, false);
 					}
-					else if(testCase == 2) {
+					else if(testCase == 2 || testCase == 3) {
 						agent.setPrefs(true, false, true, false, true);
 					}
+				}
+				
+				if (i==2) {
+					agent.setAttr(0.0,0.0,0.3,0.0,0.0);
 				}
 			}
 			
