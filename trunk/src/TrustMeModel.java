@@ -279,7 +279,7 @@ public class TrustMeModel extends SimModelImpl {
 				}
 				
 				if (i==2) {
-					agent.setAttr(0.0,0.0,0.3,0.0,0.0);
+					agent.setAttr(0.3,0.3,0.3,0.3,0.3);
 				}
 			}
 			
