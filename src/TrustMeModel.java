@@ -165,10 +165,11 @@ public class TrustMeModel extends SimModelImpl {
 	    if (showPlot) {
 	    	graph.display();
 	    	deterministicGraph.display();
-	    	sinalphaGraph.display();
 	    	
-	    	if (useTestAgents)
+	    	if (useTestAgents) {
+		    	sinalphaGraph.display();
 	    		deterministicGraphTest.display();
+	    	}
 	    }
 	}
 
@@ -183,7 +184,7 @@ public class TrustMeModel extends SimModelImpl {
 			graph.dispose();
 		if(deterministicGraph != null)
 			deterministicGraph.dispose();
-		if(sinalphaGraph != null)
+		if(useTestAgents && sinalphaGraph != null)
 			sinalphaGraph.dispose();
 		if(useTestAgents && deterministicGraphTest != null)
 			deterministicGraphTest.dispose();
@@ -192,9 +193,10 @@ public class TrustMeModel extends SimModelImpl {
 	    schedule = null;
 	    graph = null;
 	    deterministicGraph = null;
-	    sinalphaGraph = null;
-	    if (useTestAgents)
+	    if (useTestAgents) {
+	    	sinalphaGraph = null;
 	    	deterministicGraphTest = null;
+	    }
 
 	    System.gc ();
 
@@ -221,9 +223,7 @@ public class TrustMeModel extends SimModelImpl {
 
 	public void buildModel() {	    
 		System.out.println("Running BuildModel begginning");
-		
-		if (useTestAgents)
-			mutationProbability = 0.0;
+
 		
 		if (useTestAgents && testCase == 3 && numAgents < 3)
 			numAgents = 3;
@@ -363,10 +363,11 @@ public class TrustMeModel extends SimModelImpl {
 	    if (showPlot) {
 	    	graph.step();
 	    	deterministicGraph.step();
-	    	sinalphaGraph.step();
 	    	
-	    	if (useTestAgents)
+	    	if (useTestAgents) {
+		    	sinalphaGraph.step();
 	    		deterministicGraphTest.step();
+	    	}
 	    }
 	}
 	
@@ -464,10 +465,11 @@ public class TrustMeModel extends SimModelImpl {
 		if (showPlot) {
 			graph.step();
 			deterministicGraph.step();
-			sinalphaGraph.step();
 			
-			if (useTestAgents)
+			if (useTestAgents) {
+				sinalphaGraph.step();
 				deterministicGraphTest.step();
+			}
 		}
 	}
 
@@ -530,40 +532,43 @@ public class TrustMeModel extends SimModelImpl {
 			});
 		}
 			
-		sinalphaGraph = new OpenSequenceGraph("SinAlpha Curve", this);
-		
-		sinalphaGraph.setAxisTitles("time", "trust");
-		sinalphaGraph.setYRange(0, 12);
-		
-		sinalphaGraph.addSequence("Connection Trust", new Sequence() {
-			public double getSValue() {
-				
-				Double d = 0.0;
-				TrustMeAgent agent = (TrustMeAgent) agentList.get(0);
-				d = agent.getTrustIn(1);
-				
-				return d*10;
-			}
-		});
-		
-		sinalphaGraph.addSequence("Connection Trust", new Sequence() {
-			public double getSValue() {
-				
-				Double d = 0.0;
-				TrustMeAgent agent = (TrustMeAgent) agentList.get(1);
-				d = agent.getTrustIn(0);
-				
-				return d*10;
-			}
-		});
-		
+		if (useTestAgents) {
+			sinalphaGraph = new OpenSequenceGraph("SinAlpha Curve", this);
+
+			sinalphaGraph.setAxisTitles("time", "trust");
+			sinalphaGraph.setYRange(0, 12);
+
+			sinalphaGraph.addSequence("Connection Trust", new Sequence() {
+				public double getSValue() {
+
+					Double d = 0.0;
+					TrustMeAgent agent = (TrustMeAgent) agentList.get(0);
+					d = agent.getTrustIn(1);
+
+					return d*10;
+				}
+			});
+
+			sinalphaGraph.addSequence("Connection Trust", new Sequence() {
+				public double getSValue() {
+
+					Double d = 0.0;
+					TrustMeAgent agent = (TrustMeAgent) agentList.get(1);
+					d = agent.getTrustIn(0);
+
+					return d*10;
+				}
+			});
+		}
+
 
 		graph.display();
 		deterministicGraph.display();
-		sinalphaGraph.display();
 		
-		if (useTestAgents)
+		if (useTestAgents) {
+			sinalphaGraph.display();
 			deterministicGraphTest.display();
+		}
 	}
 	
 	
@@ -780,6 +785,8 @@ public class TrustMeModel extends SimModelImpl {
 			int agentReputation = Math.round(rep);
 			TrustMeAgent agent = (TrustMeAgent)agentList.get(i);
 			agent.setReputation(agentReputation);
+		
+			System.out.println(agent.getWho() + "'s reputation: " + agentReputation);
 			
 			if (showReputation) {
 				Color nodeColor = repColorCode(Math.round(rep));
