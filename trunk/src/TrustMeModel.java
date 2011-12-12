@@ -34,6 +34,7 @@ public class TrustMeModel extends SimModelImpl {
 	// Model variables
 	private int updateEveryN = 5;
 	private int initialSteps = 1;
+	
 	// Default values
 	private int spaceSizeX = 400;
 	private int spaceSizeY = 400;
@@ -61,7 +62,6 @@ public class TrustMeModel extends SimModelImpl {
 	private OpenSequenceGraph graph;
 	private OpenSequenceGraph deterministicGraph;
 	private OpenSequenceGraph sinalphaGraph;
-	private OpenSequenceGraph deterministicGraphTest;
 	
 	private BasicAction initialAction;
 	private boolean showPlot = true;
@@ -168,7 +168,6 @@ public class TrustMeModel extends SimModelImpl {
 	    	
 	    	if (useTestAgents) {
 		    	sinalphaGraph.display();
-	    		deterministicGraphTest.display();
 	    	}
 	    }
 	}
@@ -186,8 +185,6 @@ public class TrustMeModel extends SimModelImpl {
 			deterministicGraph.dispose();
 		if(useTestAgents && sinalphaGraph != null)
 			sinalphaGraph.dispose();
-		if(useTestAgents && deterministicGraphTest != null)
-			deterministicGraphTest.dispose();
 		
 		dsurf = null;
 	    schedule = null;
@@ -195,7 +192,6 @@ public class TrustMeModel extends SimModelImpl {
 	    deterministicGraph = null;
 	    if (useTestAgents) {
 	    	sinalphaGraph = null;
-	    	deterministicGraphTest = null;
 	    }
 
 	    System.gc ();
@@ -366,7 +362,6 @@ public class TrustMeModel extends SimModelImpl {
 	    	
 	    	if (useTestAgents) {
 		    	sinalphaGraph.step();
-	    		deterministicGraphTest.step();
 	    	}
 	    }
 	}
@@ -442,20 +437,6 @@ public class TrustMeModel extends SimModelImpl {
 		
 		if (showReputation || useReputation)
 			calcReputation();
-
-		if(debug) {
-			DecimalFormat myFormatter = new DecimalFormat("###.##");
-			//System.out.println("\nTraits 0: " + ((TrustMeAgent) agentList.get(0)).printTraits());
-			//String output = myFormatter.format(((TrustMeAgent) agentList.get(0)).getTrustIn(1));
-			//System.out.println("Trust 0 in 1: " + output);
-	
-			System.out.println("Trust 0 in 1: " + ((TrustMeAgent) agentList.get(0)).getTrustIn(1));
-			//System.out.println("\nTraits 1: " + ((TrustMeAgent) agentList.get(1)).printTraits());
-	
-			//String output2 = myFormatter.format(((TrustMeAgent) agentList.get(1)).getTrustIn(0));
-			//System.out.println("Trust 1 in 0: " +  output2 + "\n------------");
-			//System.out.println("Trust 1 in 0: " + ((TrustMeAgent) agentList.get(1)).getTrustIn(0) + "\n------------");
-		}
 		
 		if(!layoutType.equals("None")) {
 			graphLayout.updateLayout();
@@ -468,7 +449,6 @@ public class TrustMeModel extends SimModelImpl {
 			
 			if (useTestAgents) {
 				sinalphaGraph.step();
-				deterministicGraphTest.step();
 			}
 		}
 	}
@@ -513,24 +493,6 @@ public class TrustMeModel extends SimModelImpl {
 			}
 		});
 		
-		if(useTestAgents) {
-			//TODO erase or keep??
-			useTestAgents = false; //TODO: erase this temporary line
-			deterministicGraphTest = new OpenSequenceGraph("Trust of Agent " + 1, this);
-			deterministicGraphTest.setAxisTitles("time", "trust");
-			deterministicGraphTest.setYRange(0, 12);
-			
-			deterministicGraphTest.addSequence("Connection Trust", new Sequence() {
-				public double getSValue() {
-					
-					Double d = 0.0;
-					if (connectionTrust.containsKey(1))
-						d=connectionTrust.get(1);
-						
-					return d*10;
-				}
-			});
-		}
 			
 		if (useTestAgents) {
 			sinalphaGraph = new OpenSequenceGraph("SinAlpha Curve", this);
@@ -567,7 +529,6 @@ public class TrustMeModel extends SimModelImpl {
 		
 		if (useTestAgents) {
 			sinalphaGraph.display();
-			deterministicGraphTest.display();
 		}
 	}
 	
@@ -615,7 +576,6 @@ public class TrustMeModel extends SimModelImpl {
 			int optionId = agent.bestOptions.get(b);
 			
 			// sends request
-			//if(ag.acceptRequest(agent)) {
 			if (((TrustMeAgent)agentList.get(optionId)).acceptRequest(agent)) {
 				
 				// request was accepted, so create connection
