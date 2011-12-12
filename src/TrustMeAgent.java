@@ -462,7 +462,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		double trustOnAgent = agentTrust.get(agent.getWho());
 		
-		System.out.println(who + " getting opinion from " + agent.getWho());
+		System.out.println(who + " getting opinion from " + agent.getWho() + " ---------------------------------");
 		
 		// trust records of the other agent
 		Map<Integer,Double> trustInfo = agent.getAgentTrust();
@@ -487,7 +487,8 @@ public class TrustMeAgent extends DefaultDrawableNode {
 				double newTrust = (1.0 - opinionWeight) * originalTrust + opinionWeight * foreignTrust;
 				
 				if (agentId==2) //only print for agent 3 (for testing)
-					System.out.println("opinionWeight: " + opinionWeight + "; newTrust: " + newTrust);
+					System.out.println("opinionWeight: " + opinionWeight);
+					System.out.println("oldTrust: " + originalTrust + "\nnewTrust: " + newTrust);
 				
 				
 				// updates trust 
