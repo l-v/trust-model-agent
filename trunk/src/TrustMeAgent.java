@@ -313,10 +313,10 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
-		if (who==0) {System.out.println("lambda 0 : " + lambda);}
+		/*if (who==0) {System.out.println("lambda 0 : " + lambda);}
 		if (who==1) {System.out.println("lambda 1 : " + lambda);}
 		if (who==2) {System.out.println("lambda 2 : " + lambda);}
-
+		*/
 		// if alpha wasn't initialized yet
 		if(!agentAlpha.containsKey(index)) {
 			double alpha = alpha0 + lambda*omega;
@@ -462,7 +462,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		double trustOnAgent = agentTrust.get(agent.getWho());
 		
-		System.out.println(who + " getting opinion from " + agent.getWho() + " ---------------------------------");
+		System.out.println(who + " getting opinion from " + agent.getWho() + "................ ");
 		
 		// trust records of the other agent
 		Map<Integer,Double> trustInfo = agent.getAgentTrust();
