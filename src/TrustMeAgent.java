@@ -6,10 +6,7 @@ import java.util.*;
 
 public class TrustMeAgent extends DefaultDrawableNode {
 	private int who;
-	
-	//////Node stuff
 	private double spaceSizeX, spaceSizeY;
-	////
 	
 	/***
 	 *  sinalpha parameters
@@ -31,11 +28,12 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	private Map<String,Double> traits = new HashMap<String,Double>();
 	
 	/**
-	 * 	private double neat = 0.5;
-		private double outgoing = 0.5;
-		private double nice = 0.5;
-		private double active = 0.5;
-		private double responsible = 0.5;
+	 * Traits:
+	 * 	private double neat
+		private double outgoing
+		private double nice
+		private double active
+		private double responsible
 	 */
 	
 	
@@ -46,8 +44,11 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	private double minimumTrust = 0.6; // confiança mínima necessária
 	private int maxOptions = 3; // numero maximo de agentes com quem tentar conexão
 	private double picky; //intervalo de avaliação de agentes [-picky, picky]
-	//neat_agente1 = 0.5 & neat_agente2 = 0.4
-	//0.5 - 0.4 = 0.1 <-- picky as 0.2 accepts!
+	/**
+	 * picky example
+	 * neat_agente1 = 0.5 & neat_agente2 = 0.4
+	 * 0.5 - 0.4 = 0.1 <-- picky as 0.2 accepts!
+	 */
 	
 	// record of trust placed on other agents
 	Map<Integer, Double> agentTrust; // Map<agentID (on model), trustPlaced>
@@ -65,7 +66,11 @@ public class TrustMeAgent extends DefaultDrawableNode {
 	
 
 	
-	///////////////////////NODE
+	///////////////////////OPERATIONS
+	
+	/**
+	 * Constructor
+	 */
 	public TrustMeAgent(double spaceSizeX, double spaceSizeY, int who, int xpos, int ypos) {
 	    //super(drawable);
 	    this.spaceSizeX = spaceSizeX;
@@ -313,10 +318,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		
 		// takes into account positive and negative traits
 		lambda = lambdaPos*posTraits + lambdaNeg*negTraits;
-		/*if (who==0) {System.out.println("lambda 0 : " + lambda);}
-		if (who==1) {System.out.println("lambda 1 : " + lambda);}
-		if (who==2) {System.out.println("lambda 2 : " + lambda);}
-		*/
+		
 		// if alpha wasn't initialized yet
 		if(!agentAlpha.containsKey(index)) {
 			double alpha = alpha0 + lambda*omega;
@@ -356,25 +358,6 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		if (agentTrust.size()==0) {
 			System.out.println("WARNING: " + who + " has no records!");
 		}
-		/*
-		//TODO erase all this junk of prints
-		if (false && (who==0 || who == 3)) {
-			String bestOptionsTrust = "";
-			for (int i=0; i!=bestOptions.size(); i++) {
-				bestOptionsTrust += agentTrust.get((Object)bestOptions.get(i));
-				if (i!=bestOptions.size()-1)
-					bestOptionsTrust += "; ";
-				else
-					bestOptionsTrust += "]";
-			}
-			
-			//System.out.println("bestOptions of " + who + "-> " + bestOptionsTrust);
-			if (bestOptions.size() == 3) {
-				System.out.println("trust in " + bestOptions.get(0) + "=" + agentTrust.get(bestOptions.get(0)));
-				System.out.println("trust in " + bestOptions.get(1) + "=" + agentTrust.get(bestOptions.get(1)));
-				System.out.println("trust in " + bestOptions.get(2) + "=" + agentTrust.get(bestOptions.get(2)));
-			}
-		}*/
 			
 		
 		// if agent already on bestOptions, remove it and update the list 
@@ -432,9 +415,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			return false;
 		
 		else if (bestOptions.contains(agent.getWho())) {
-			
-			// still not sure where connections will be made, therefore
-			// private int connectionId still temporary solution
+	
 			connectionId = agent.getWho();
 			connected = true;
 			
