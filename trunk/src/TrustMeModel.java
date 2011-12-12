@@ -27,9 +27,9 @@ import uchicago.src.sim.util.Random;
 public class TrustMeModel extends SimModelImpl {
 	
 	//DEBUG && TESTING
-	private boolean debug = true;	
-	private boolean useTestAgents = true;
-	private int testCase = 3; 
+	private boolean debug = false;	
+	private boolean useTestAgents = false;
+	private int testCase = 1; 
 	
 	// Model variables
 	private int updateEveryN = 5;
@@ -38,7 +38,7 @@ public class TrustMeModel extends SimModelImpl {
 	// Default values
 	private int spaceSizeX = 400;
 	private int spaceSizeY = 400;
-	private int numAgents = 2;
+	private int numAgents = 20;
 	private ArrayList agentList = new ArrayList(numAgents);
 	
 	private double numConnects = 0;
@@ -220,7 +220,9 @@ public class TrustMeModel extends SimModelImpl {
 	public void buildModel() {	    
 		System.out.println("Running BuildModel begginning");
 
-		
+		// set default agent numbers for testing
+		if (useTestAgents && testCase != 3)
+			numAgents = 2;
 		if (useTestAgents && testCase == 3 && numAgents < 3)
 			numAgents = 3;
 		
