@@ -5,6 +5,8 @@ import uchicago.src.sim.gui.OvalNetworkItem;
 import java.util.*;
 
 public class TrustMeAgent extends DefaultDrawableNode {
+	private boolean debug = false;
+	
 	private int who;
 	private double spaceSizeX, spaceSizeY;
 	
@@ -332,7 +334,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 			double oldAlpha = agentAlpha.get(index);
 			
 			double newAlpha = oldAlpha + lambda*omega;
-			if (who==-1) System.out.println("new alpha: " + newAlpha);
+			if (debug && who==-1) System.out.println("new alpha: " + newAlpha);
 			if (newAlpha > alpha1)
 				agentAlpha.put(index, alpha1);
 			else if (newAlpha < alpha0)
@@ -342,7 +344,10 @@ public class TrustMeAgent extends DefaultDrawableNode {
 		}
 				
 		double trust = delta * Math.sin(agentAlpha.get(index)) + delta;
-		System.out.println("agent " + who + ", trust in " + agent.getWho() + ": " + trust);
+		
+		if (debug)
+			System.out.println("agent " + who + ", trust in " + agent.getWho() + ": " + trust);
+	
 		return trust;
 	}
 	
@@ -467,7 +472,7 @@ public class TrustMeAgent extends DefaultDrawableNode {
 				double opinionWeight = 0.30*trustOnAgent;
 				double newTrust = (1.0 - opinionWeight) * originalTrust + opinionWeight * foreignTrust;
 				
-				if (agentId==2) //only print for agent 3 (for testing)
+				if (debug && agentId==2) //only print for agent 3 (for testing)
 					System.out.println("opinionWeight: " + opinionWeight);
 					System.out.println("oldTrust: " + originalTrust + "\nnewTrust: " + newTrust);
 				

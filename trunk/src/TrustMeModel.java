@@ -544,7 +544,10 @@ public class TrustMeModel extends SimModelImpl {
 		double probMutate = agent.randInteger(100)+1;
 
 		if (probMutate <= mutationProbability) {
-			System.out.println("MUTATED!!!");
+			
+			if (debug)
+				System.out.println("MUTATED!!!");
+			
 			agent.mutate();
 
 			// color scheme
@@ -581,7 +584,7 @@ public class TrustMeModel extends SimModelImpl {
 			if (((TrustMeAgent)agentList.get(optionId)).acceptRequest(agent)) {
 				
 				// request was accepted, so create connection
-				System.out.println("CONNECTED---" + agent.getWho() + "-" + optionId + "----------------");
+				System.out.println("CONNECTED---" + agent.getWho() + "-" + optionId);
 
 				agent.setConnected(true);
 				agent.connectionId = optionId;
